@@ -1,0 +1,12 @@
+
+oqtopus/libs/
+oqtopus/logs
+plugin*.zip
+plugin*.tar.gz
+
+.orig
+.idea
+.pycache
+__pycache__
+.DS_Store
+.vscode
