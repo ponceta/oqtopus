@@ -1,1 +1,5 @@
-Here comes the QGIS plugin for this module
+![logo](oqtopus/icons/oqtopus-logo.png)
+
+# Oqtopus
+
+This is the management tool for every PUM based module installation and upgrade
