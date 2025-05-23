@@ -1,5 +1,5 @@
-![logo](oqtopus/icons/oqtopus-logo.png)
+# oQtopus
 
-# Oqtopus
+![logo](oqtopus/icons/oqtopus-logo.png)
 
 This is the management tool for every PUM based module installation and upgrade
