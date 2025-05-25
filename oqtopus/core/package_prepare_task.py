@@ -90,15 +90,16 @@ class PackagePrepareTask(QThread):
         logging.info(f"Downloading from '{url}' to '{self.zip_file}'")
         data_size = 0
         with open(self.zip_file, "wb") as file:
+            next_emit_threshold = 5 * 1024 * 1024  # 5MB threshold
             for data in response.iter_content(chunk_size=None):
+                file.write(data)
 
                 self.__checkForCanceled()
 
                 data_size += len(data)
-                # print(f"Recived '{data_size}' bytes")
-                # self.signalPackagingProgress.emit(data_size)
-
-                file.write(data)
+                if data_size >= next_emit_threshold:  # Emit signal when threshold is exceeded
+                    self.signalPackagingProgress.emit(data_size)
+                    next_emit_threshold += 5 * 1024 * 1024  # Update to the next threshold
 
     def __extract_zip_file(self, zip_file):
         temp_dir = PluginUtils.plugin_temp_path()

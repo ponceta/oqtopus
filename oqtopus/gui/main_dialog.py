@@ -53,7 +53,7 @@ class MainDialog(QDialog, DIALOG_UI):
     def __init__(self, modules_registry, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
-        self.buttonBox.rejected.connect(self.accept)
+        self.buttonBox.rejected.connect(self.__closeDialog)
         self.buttonBox.helpRequested.connect(self.__helpRequested)
 
         self.__modules_registry = modules_registry
@@ -78,9 +78,6 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__packagePrepareTask.signalPackagingProgress.connect(
             self.__packagePrepareTaskProgress
         )
-
-    def __helpRequested(self):
-        QDesktopServices.openUrl(QUrl("https://github.com/oqtopus/Oqtopus"))
 
     def __initGuiModules(self):
         self.module_module_comboBox.clear()
@@ -133,6 +130,16 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.moduleInfo_install_pushButton.clicked.connect(self.__installModuleClicked)
         self.moduleInfo_upgrade_pushButton.clicked.connect(self.__upgradeModuleClicked)
+
+    def __closeDialog(self):
+        if self.__packagePrepareTask.isRunning():
+            self.__packagePrepareTask.cancel()
+            self.__packagePrepareTask.wait()
+
+        self.accept()
+
+    def __helpRequested(self):
+        QDesktopServices.openUrl(QUrl("https://github.com/oqtopus/Oqtopus"))
 
     def __loadDatabaseInformations(self):
         self.db_servicesConfigFilePath_label.setText(pgserviceparser.conf_path().as_posix())
@@ -278,11 +285,14 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__data_model_dir = os.path.join(self.__packagePrepareTask.package_dir, "datamodel")
         pumConfigFilename = os.path.join(self.__data_model_dir, ".pum.yaml")
         if not os.path.exists(pumConfigFilename):
-            raise Exception(
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
                 self.tr(
                     f"The selected file '{self.__packagePrepareTask.zip_file}' does not contain a valid .pum.yaml file."
-                )
+                ),
             )
+            return
 
         self.__pum_config = PumConfig.from_yaml(pumConfigFilename)
 
