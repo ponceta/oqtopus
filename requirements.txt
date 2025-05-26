@@ -1,0 +1,2 @@
+pgserviceparser >= 2.3.0
+pum-0.0.1-py3-none-any.whl

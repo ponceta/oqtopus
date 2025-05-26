@@ -24,8 +24,8 @@
 
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
-from oqtopus.libs import pgserviceparser
-from oqtopus.utils.plugin_utils import PluginUtils
+from ..libs import pgserviceparser
+from ..utils.plugin_utils import PluginUtils
 
 DIALOG_UI = PluginUtils.get_ui_class("database_duplicate_dialog.ui")
 

@@ -6,7 +6,7 @@ import zipfile
 import requests
 from qgis.PyQt.QtCore import QFileInfo, QThread, pyqtSignal
 
-from oqtopus.utils.plugin_utils import PluginUtils
+from ..utils.plugin_utils import PluginUtils
 
 
 class PackagePrepareTask(QThread):

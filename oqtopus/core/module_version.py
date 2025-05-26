@@ -45,9 +45,6 @@ class ModuleVersion:
         self.download_url = (
             f"https://github.com/{organisation}/{repository}/archive/refs/{type}/{self.branch}.zip"
         )
-        # self.download_url = (
-        #     f"https://codeload.github.com/Oqtopus/wastewater/zip/refs/tags/{self.branch}"
-        # )
 
     def display_name(self):
         if self.prerelease:

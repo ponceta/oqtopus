@@ -29,15 +29,15 @@ from qgis.PyQt.QtCore import Qt, QUrl
 from qgis.PyQt.QtGui import QColor, QDesktopServices
 from qgis.PyQt.QtWidgets import QAction, QDialog, QFileDialog, QMenu, QMessageBox
 
-from oqtopus.core.package_prepare_task import PackagePrepareTask
-from oqtopus.gui.database_create_dialog import DatabaseCreateDialog
-from oqtopus.gui.database_duplicate_dialog import DatabaseDuplicateDialog
-from oqtopus.libs import pgserviceparser
-from oqtopus.libs.pum.config import PumConfig
-from oqtopus.libs.pum.schema_migrations import SchemaMigrations
-from oqtopus.libs.pum.upgrader import Upgrader
-from oqtopus.utils.plugin_utils import PluginUtils
-from oqtopus.utils.qt_utils import OverrideCursor, QtUtils
+from ..core.package_prepare_task import PackagePrepareTask
+from ..libs import pgserviceparser
+from ..libs.pum.config import PumConfig
+from ..libs.pum.schema_migrations import SchemaMigrations
+from ..libs.pum.upgrader import Upgrader
+from ..utils.plugin_utils import PluginUtils
+from ..utils.qt_utils import OverrideCursor, QtUtils
+from .database_create_dialog import DatabaseCreateDialog
+from .database_duplicate_dialog import DatabaseDuplicateDialog
 
 DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 
