@@ -6,27 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1304</width>
-    <height>569</height>
+    <width>1651</width>
+    <height>818</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Oqtopus Module Management Tool</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_8">
+  <layout class="QGridLayout" name="gridLayout_8" rowstretch="0,0,0,0,4,0">
    <item row="1" column="2" rowspan="2">
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
       <string>Plugin</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="3" column="1">
-       <widget class="QPushButton" name="pushButton_8">
-        <property name="text">
-         <string>Copy ZIP to directory</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_6">
         <property name="text">
@@ -34,22 +27,17 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_7">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
-        </property>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="pushButton_8">
         <property name="text">
-         <string>tww_user_profile</string>
+         <string>Copy ZIP to directory</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_5">
+      <item row="2" column="2">
+       <widget class="QPushButton" name="pushButton_11">
         <property name="text">
-         <string>Current version</string>
+         <string>See changelog</string>
         </property>
        </widget>
       </item>
@@ -72,18 +60,49 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="pushButton_11">
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_7">
+        <property name="font">
+         <font>
+          <italic>true</italic>
+         </font>
+        </property>
         <property name="text">
-         <string>See changelog</string>
+         <string>tww_user_profile</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Current version</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <spacer name="verticalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
    </item>
    <item row="4" column="0" colspan="3">
     <widget class="QGroupBox" name="groupBox_9">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="minimumSize">
       <size>
        <width>0</width>
@@ -93,6 +112,24 @@
      <property name="title">
       <string>Logs</string>
      </property>
+     <layout class="QGridLayout" name="gridLayout_11">
+      <item row="0" column="0">
+       <widget class="QPlainTextEdit" name="logs_plainTextEdit">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="0" column="2">
@@ -101,19 +138,42 @@
       <string>Project</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="pushButton_4">
-        <property name="text">
-         <string>Install demo project 1.6.3</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
-       <widget class="QPushButton" name="pushButton_10">
+       <widget class="QPushButton" name="project_seeChangelog_pushButton">
         <property name="text">
          <string>See changelog</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="project_info_label">
+        <property name="text">
+         <string>-</string>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="project_install_pushButton">
+        <property name="text">
+         <string>Install demo project</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <spacer name="verticalSpacer_7">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
@@ -130,28 +190,22 @@
      <property name="title">
       <string>Module selection</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout" columnstretch="0,2,0">
-      <item row="2" column="0" colspan="3">
-       <widget class="QGroupBox" name="module_zipPackage_groupBox">
-        <property name="title">
-         <string>Zip package</string>
+     <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
+      <item row="4" column="0">
+       <spacer name="verticalSpacer_8">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
         </property>
-        <property name="flat">
-         <bool>true</bool>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout_9">
-         <item row="0" column="1">
-          <widget class="QToolButton" name="module_browseZip_toolButton">
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLineEdit" name="module_fromZip_lineEdit"/>
-         </item>
-        </layout>
-       </widget>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>10</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item row="1" column="1">
        <widget class="QComboBox" name="module_version_comboBox">
@@ -170,6 +224,52 @@
           <string>testing (Attention! Never use in production)</string>
          </property>
         </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Module</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Version</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QGroupBox" name="module_zipPackage_groupBox">
+        <property name="title">
+         <string>Zip package</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_9">
+         <item row="0" column="0">
+          <widget class="QLineEdit" name="module_fromZip_lineEdit"/>
+         </item>
+         <item row="0" column="1">
+          <widget class="QToolButton" name="module_browseZip_toolButton">
+           <property name="text">
+            <string>...</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="3">
+       <widget class="QLabel" name="module_information_label">
+        <property name="text">
+         <string>-</string>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+        </property>
        </widget>
       </item>
       <item row="0" column="1">
@@ -193,28 +293,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Module</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="module_latestVersion_label">
-        <property name="text">
-         <string>latest</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Version</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
+      <item row="6" column="0">
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -226,6 +305,13 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="module_latestVersion_label">
+        <property name="text">
+         <string>latest</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -249,13 +335,6 @@
       <string>Database connection</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>PG Service config</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
        <widget class="QLabel" name="db_servicesConfigFilePath_label">
         <property name="font">
@@ -271,13 +350,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QToolButton" name="db_operations_toolButton">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_9">
         <property name="text">
-         <string>...</string>
-        </property>
-        <property name="popupMode">
-         <enum>QToolButton::InstantPopup</enum>
+         <string>PG Service config</string>
         </property>
        </widget>
       </item>
@@ -285,6 +361,18 @@
        <widget class="QLabel" name="label_3">
         <property name="text">
          <string>PG Service</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="db_moduleInfo_label">
+        <property name="font">
+         <font>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>No module found</string>
         </property>
        </widget>
       </item>
@@ -322,10 +410,10 @@
         </item>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_4">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_11">
         <property name="text">
-         <string>Database</string>
+         <string>Module info</string>
         </property>
        </widget>
       </item>
@@ -341,22 +429,20 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_11">
+      <item row="0" column="2">
+       <widget class="QToolButton" name="db_operations_toolButton">
         <property name="text">
-         <string>Module info</string>
+         <string>...</string>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="db_moduleInfo_label">
-        <property name="font">
-         <font>
-          <italic>true</italic>
-         </font>
-        </property>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>No module found</string>
+         <string>Database</string>
         </property>
        </widget>
       </item>
@@ -376,7 +462,7 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="1" rowspan="3">
+   <item row="0" column="1" rowspan="4">
     <widget class="QGroupBox" name="groupBox_7">
      <property name="title">
       <string>Module informations</string>

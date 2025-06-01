@@ -1,10 +1,9 @@
-import logging
 import os
 import shutil
 import zipfile
 
 import requests
-from qgis.PyQt.QtCore import QFileInfo, QThread, pyqtSignal
+from qgis.PyQt.QtCore import QThread, pyqtSignal
 
 from ..utils.plugin_utils import PluginUtils
 
@@ -87,10 +86,10 @@ class PackagePrepareTask(QThread):
 
         self.__checkForCanceled()
 
-        logging.info(f"Downloading from '{url}' to '{self.zip_file}'")
+        # logging.info(f"Downloading from '{url}' to '{self.zip_file}'")
         data_size = 0
         with open(self.zip_file, "wb") as file:
-            next_emit_threshold = 5 * 1024 * 1024  # 5MB threshold
+            next_emit_threshold = 10 * 1024 * 1024  # 10MB threshold
             for data in response.iter_content(chunk_size=None):
                 file.write(data)
 
@@ -99,20 +98,23 @@ class PackagePrepareTask(QThread):
                 data_size += len(data)
                 if data_size >= next_emit_threshold:  # Emit signal when threshold is exceeded
                     self.signalPackagingProgress.emit(data_size)
-                    next_emit_threshold += 5 * 1024 * 1024  # Update to the next threshold
+                    next_emit_threshold += 10 * 1024 * 1024  # Update to the next threshold
 
     def __extract_zip_file(self, zip_file):
         temp_dir = PluginUtils.plugin_temp_path()
-        self.package_dir = os.path.join(temp_dir, QFileInfo(zip_file).baseName())
-        if os.path.exists(self.package_dir):
-            shutil.rmtree(self.package_dir)
-
-        logging.info(f"Extracting package '{zip_file}' to '{self.package_dir}'")
 
         # Unzip the file to plugin temp dir
         try:
             with zipfile.ZipFile(zip_file, "r") as zip_ref:
+                # Find the top-level directory
+                zip_dirname = zip_ref.namelist()[0].split("/")[0]
+                self.package_dir = os.path.join(temp_dir, zip_dirname)
+
+                if os.path.exists(self.package_dir):
+                    shutil.rmtree(self.package_dir)
+
                 zip_ref.extractall(temp_dir)
+
         except zipfile.BadZipFile:
             raise Exception(self.tr(f"The selected file '{zip_file}' is not a valid zip archive."))
 

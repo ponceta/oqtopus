@@ -22,7 +22,9 @@
 #
 # ---------------------------------------------------------------------
 
+import logging
 import os
+import shutil
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
@@ -34,7 +36,7 @@ from ..libs import pgserviceparser
 from ..libs.pum.config import PumConfig
 from ..libs.pum.schema_migrations import SchemaMigrations
 from ..libs.pum.upgrader import Upgrader
-from ..utils.plugin_utils import PluginUtils
+from ..utils.plugin_utils import LoggingBridge, PluginUtils
 from ..utils.qt_utils import OverrideCursor, QtUtils
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
@@ -53,6 +55,11 @@ class MainDialog(QDialog, DIALOG_UI):
     def __init__(self, modules_registry, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
+
+        self.logger = logging.getLogger()
+        self.loggingBridge = LoggingBridge(self.__logged_line)
+        self.logger.addHandler(self.loggingBridge)
+
         self.buttonBox.rejected.connect(self.__closeDialog)
         self.buttonBox.helpRequested.connect(self.__helpRequested)
 
@@ -61,8 +68,10 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.__database_connection = None
 
-        self.__pum_config = None
+        self.__package_dir = None
         self.__data_model_dir = None
+        self.__pum_config = None
+        self.__project_file = None
 
         # Init GUI Modules
         self.__initGuiModules()
@@ -73,11 +82,16 @@ class MainDialog(QDialog, DIALOG_UI):
         # Init GUI Module Info
         self.__initGuiModuleInfo()
 
+        # Init GUI Project
+        self.__initGuiProject()
+
         self.__packagePrepareTask = PackagePrepareTask(self)
         self.__packagePrepareTask.finished.connect(self.__packagePrepareTaskFinished)
         self.__packagePrepareTask.signalPackagingProgress.connect(
             self.__packagePrepareTaskProgress
         )
+
+        self.logger.info("Ready.")
 
     def __initGuiModules(self):
         self.module_module_comboBox.clear()
@@ -131,6 +145,17 @@ class MainDialog(QDialog, DIALOG_UI):
         self.moduleInfo_install_pushButton.clicked.connect(self.__installModuleClicked)
         self.moduleInfo_upgrade_pushButton.clicked.connect(self.__upgradeModuleClicked)
 
+    def __initGuiProject(self):
+        self.project_install_pushButton.clicked.connect(self.__projectInstallClicked)
+        self.project_seeChangelog_pushButton.clicked.connect(self.__projectSeeChangelogClicked)
+
+    def __logged_line(self, line):
+        self.logs_plainTextEdit.appendPlainText(line)
+
+        # Automatically scroll to the bottom of the logs
+        scroll_bar = self.logs_plainTextEdit.verticalScrollBar()
+        scroll_bar.setValue(scroll_bar.maximum())
+
     def __closeDialog(self):
         if self.__packagePrepareTask.isRunning():
             self.__packagePrepareTask.cancel()
@@ -139,7 +164,9 @@ class MainDialog(QDialog, DIALOG_UI):
         self.accept()
 
     def __helpRequested(self):
-        QDesktopServices.openUrl(QUrl("https://github.com/oqtopus/Oqtopus"))
+        help_page = "https://github.com/oqtopus/Oqtopus"
+        self.logger.info(f"Opening help page {help_page}")
+        QDesktopServices.openUrl(QUrl(help_page))
 
     def __loadDatabaseInformations(self):
         self.db_servicesConfigFilePath_label.setText(pgserviceparser.conf_path().as_posix())
@@ -211,8 +238,17 @@ class MainDialog(QDialog, DIALOG_UI):
         if current_module_version is None:
             return
 
-        self.__pum_config = None
+        self.__package_dir = None
         self.__data_model_dir = None
+        self.__pum_config = None
+        self.__project_file = None
+
+        loading_text = self.tr(
+            f"Loading package for module '{self.module_module_comboBox.currentText()}' version '{current_module_version.display_name()}'..."
+        )
+        self.module_information_label.setText(loading_text)
+        QtUtils.resetForegroundColor(self.module_information_label)
+        self.logger.info(loading_text)
 
         if self.__packagePrepareTask.isRunning():
             self.__packagePrepareTask.cancel()
@@ -263,8 +299,10 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __loadModuleFromZip(self, filename):
 
-        self.__pum_config = None
+        self.__package_dir = None
         self.__data_model_dir = None
+        self.__pum_config = None
+        self.__project_file = None
 
         if self.__packagePrepareTask.isRunning():
             self.__packagePrepareTask.cancel()
@@ -273,16 +311,31 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__packagePrepareTask.startFromZip(filename)
 
     def __packagePrepareTaskFinished(self):
+        self.logger.info("Load package task finished")
 
         if self.__packagePrepareTask.lastError is not None:
+            error_text = f"Can't load module package:\n{self.__packagePrepareTask.lastError}"
+            self.module_information_label.setText(error_text)
+            QtUtils.setForegroundColor(self.module_information_label, self.COLOR_WARNING)
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
-                self.tr(f"Can't load module package:\n{self.__packagePrepareTask.lastError}"),
+                self.tr(error_text),
             )
             return
 
-        self.__data_model_dir = os.path.join(self.__packagePrepareTask.package_dir, "datamodel")
+        self.__package_dir = self.__packagePrepareTask.package_dir
+        self.logger.info(f"Package loaded into '{self.__package_dir}'")
+        self.module_information_label.setText(self.__package_dir)
+        QtUtils.resetForegroundColor(self.module_information_label)
+
+        self.__packagePrepareGetPUMConfig()
+
+        self.__packagePrepareGetProjectFilename()
+
+    def __packagePrepareGetPUMConfig(self):
+
+        self.__data_model_dir = os.path.join(self.__package_dir, "datamodel")
         pumConfigFilename = os.path.join(self.__data_model_dir, ".pum.yaml")
         if not os.path.exists(pumConfigFilename):
             QMessageBox.critical(
@@ -324,8 +377,47 @@ class MainDialog(QDialog, DIALOG_UI):
                 self.moduleInfo_stackedWidget_pageInstall
             )
 
+    def __packagePrepareGetProjectFilename(self):
+        # Search for QGIS project file in self.__package_dir
+        project_file_dir = os.path.join(self.__package_dir, "project")
+
+        # Check if the directory exists
+        if not os.path.exists(project_file_dir):
+            self.project_info_label.setText(
+                self.tr(f"Project directory '{project_file_dir}' does not exist.")
+            )
+            QtUtils.setForegroundColor(self.project_info_label, self.COLOR_WARNING)
+            QtUtils.setFontItalic(self.db_database_label, True)
+            return
+
+        self.__project_file = None
+        for root, dirs, files in os.walk(project_file_dir):
+            for file in files:
+                if file.endswith(".qgz") or file.endswith(".qgs"):
+                    self.__project_file = os.path.join(root, file)
+                    break
+
+            if self.__project_file:
+                break
+
+        if self.__project_file is None:
+            self.project_info_label.setText(
+                self.tr(f"No QGIS project file (.qgz or .qgs) found into {project_file_dir}."),
+            )
+            QtUtils.setForegroundColor(self.project_info_label, self.COLOR_WARNING)
+            QtUtils.setFontItalic(self.db_database_label, True)
+            return
+
+        self.project_info_label.setText(
+            self.tr(self.__project_file),
+        )
+        QtUtils.setForegroundColor(self.project_info_label, self.COLOR_GREEN)
+        QtUtils.setFontItalic(self.db_database_label, False)
+
     def __packagePrepareTaskProgress(self, progress):
-        print(f"Progress: {progress}")
+        loading_text = self.tr("Load package task running...")
+        self.logger.info(loading_text)
+        self.module_information_label.setText(loading_text)
 
     def __seeChangeLogClicked(self):
         current_module_version = self.module_version_comboBox.currentData()
@@ -354,7 +446,9 @@ class MainDialog(QDialog, DIALOG_UI):
             )
             return
 
-        QDesktopServices.openUrl(QUrl(current_module_version.html_url))
+        changelog_url = current_module_version.html_url
+        self.logger.info(f"Opening changelog URL: {changelog_url}")
+        QDesktopServices.openUrl(QUrl(changelog_url))
 
     def __serviceChanged(self, index=None):
         if self.db_services_comboBox.currentText() == "":
@@ -536,3 +630,92 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         raise NotImplementedError("Create and grant roles is not implemented yet")
+
+    def __projectInstallClicked(self):
+
+        if self.__current_module is None:
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Please select a module and version first."),
+            )
+            return
+
+        current_module_version = self.module_version_comboBox.currentData()
+        if current_module_version is None:
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Please select a module version first."),
+            )
+            return
+
+        if self.__package_dir is None:
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("No valid package directory available."),
+            )
+            return
+
+        # Search for QGIS project file in self.__package_dir
+        project_file_dir = os.path.join(self.__package_dir, "project")
+
+        # Check if the directory exists
+        if not os.path.exists(project_file_dir):
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr(f"Project directory '{project_file_dir}' does not exist."),
+            )
+            return
+
+        self.__project_file = None
+        for root, dirs, files in os.walk(project_file_dir):
+            print(f"Searching for QGIS project file in {root}: {files}")
+            for file in files:
+                if file.endswith(".qgz") or file.endswith(".qgs"):
+                    self.__project_file = os.path.join(root, file)
+                    break
+
+            if self.__project_file:
+                break
+
+        if self.__project_file is None:
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr(f"No QGIS project file (.qgz or .qgs) found into {project_file_dir}."),
+            )
+            return
+
+        install_destination = QFileDialog.getExistingDirectory(
+            self,
+            self.tr("Select installation directory"),
+            "",
+            QFileDialog.ShowDirsOnly,
+        )
+
+        if not install_destination:
+            return
+
+        # Copy the project file to the selected directory
+        try:
+            shutil.copy(self.__project_file, install_destination)
+            QMessageBox.information(
+                self,
+                self.tr("Project installed"),
+                self.tr(
+                    f"Project file '{self.__project_file}' has been copied to '{install_destination}'."
+                ),
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr(f"Failed to copy project file: {e}"),
+            )
+            return
+
+    def __projectSeeChangelogClicked(self):
+        self.__seeChangeLogClicked()

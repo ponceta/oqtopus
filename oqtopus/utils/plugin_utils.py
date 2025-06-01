@@ -17,6 +17,7 @@
  ***************************************************************************/
 """
 
+import logging
 import os
 
 from qgis.PyQt.QtCore import QSettings, QStandardPaths
@@ -74,3 +75,14 @@ class PluginUtils:
     def get_plugin_version():
         ini_text = QSettings(PluginUtils.get_metadata_file_path(), QSettings.IniFormat)
         return ini_text.value("version")
+
+
+class LoggingBridge(logging.Handler):
+    def __init__(self, logged_line_callback, level=logging.NOTSET):
+        super().__init__(level)
+        self.__logged_line_callback = logged_line_callback
+        self.formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.__logged_line_callback(log_entry)
