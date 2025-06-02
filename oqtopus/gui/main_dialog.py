@@ -57,7 +57,8 @@ class MainDialog(QDialog, DIALOG_UI):
         self.setupUi(self)
 
         self.logger = logging.getLogger()
-        self.loggingBridge = LoggingBridge(self.__logged_line)
+        self.loggingBridge = LoggingBridge()
+        self.loggingBridge.loggedLine.connect(self.__logged_line)
         self.logger.addHandler(self.loggingBridge)
 
         self.buttonBox.rejected.connect(self.__closeDialog)
@@ -149,7 +150,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.project_install_pushButton.clicked.connect(self.__projectInstallClicked)
         self.project_seeChangelog_pushButton.clicked.connect(self.__projectSeeChangelogClicked)
 
-    def __logged_line(self, line):
+    def __logged_line(self, record, line):
         self.logs_plainTextEdit.appendPlainText(line)
 
         # Automatically scroll to the bottom of the logs

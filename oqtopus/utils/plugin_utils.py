@@ -19,8 +19,9 @@
 
 import logging
 import os
+from logging import LogRecord
 
-from qgis.PyQt.QtCore import QSettings, QStandardPaths
+from qgis.PyQt.QtCore import QObject, QSettings, QStandardPaths, pyqtSignal
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.uic import loadUiType
 
@@ -77,12 +78,16 @@ class PluginUtils:
         return ini_text.value("version")
 
 
-class LoggingBridge(logging.Handler):
-    def __init__(self, logged_line_callback, level=logging.NOTSET):
-        super().__init__(level)
-        self.__logged_line_callback = logged_line_callback
+class LoggingBridge(logging.Handler, QObject):
+
+    loggedLine = pyqtSignal(LogRecord, str)
+
+    def __init__(self, level=logging.NOTSET):
+        QObject.__init__(self)
+        logging.Handler.__init__(self, level)
+
         self.formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 
     def emit(self, record):
         log_entry = self.format(record)
-        self.__logged_line_callback(log_entry)
+        self.loggedLine.emit(record, log_entry)
