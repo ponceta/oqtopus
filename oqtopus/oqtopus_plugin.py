@@ -33,7 +33,7 @@ class OqtopusPlugin:
         self.actions = []
         self.main_menu_name = self.tr(f"&{PluginUtils.PLUGIN_NAME}")
 
-        conf_path = os.path.join(os.path.dirname(__file__), "../default_config.conf")
+        conf_path = os.path.join(os.path.dirname(__file__), "default_config.conf")
         self.modules_config = load_modules_from_conf(conf_path)
 
     # noinspection PyMethodMayBeStatic

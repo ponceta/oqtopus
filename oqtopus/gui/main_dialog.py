@@ -22,6 +22,7 @@
 #
 # ---------------------------------------------------------------------
 
+import logging
 import os
 import shutil
 
@@ -67,7 +68,7 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.loggingBridge = LoggingBridge()
         self.loggingBridge.loggedLine.connect(self.__logged_line)
-        logger.addHandler(self.loggingBridge)
+        logging.getLogger().addHandler(self.loggingBridge)
 
         self.buttonBox.rejected.connect(self.__closeDialog)
         self.buttonBox.helpRequested.connect(self.__helpRequested)

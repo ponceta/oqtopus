@@ -58,7 +58,7 @@ class PackagePrepareTask(QThread):
 
         try:
             if self.module_version is not None:
-                self.__download_module_version(self.module_version)
+                self.__download_module_assets(self.module_version)
 
             self.__extract_zip_file(self.zip_file)
 
@@ -67,10 +67,23 @@ class PackagePrepareTask(QThread):
             print(f"Erorr: {e}")
             self.lastError = e
 
-    def __download_module_version(self, module_version):
+    def __download_module_assets(self, module_version):
 
-        url = module_version.download_url
-        filename = module_version.name + ".zip"
+        if module_version.asset_datamodel is not None:
+            self.__download_module_asset(module_version.asset_datamodel)
+
+        self.__checkForCanceled()
+        if module_version.asset_project is not None:
+            self.__download_module_asset(module_version.asset_project)
+
+        self.__checkForCanceled()
+        if module_version.asset_plugin is not None:
+            self.__download_module_asset(module_version.asset_plugin)
+
+    def __download_module_asset(self, module_asset):
+
+        url = module_asset.download_url
+        filename = module_asset.type.value + ".zip"
 
         temp_dir = PluginUtils.plugin_temp_path()
         destination_directory = os.path.join(temp_dir, "Downloads")

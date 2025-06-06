@@ -1,6 +1,8 @@
 import requests
 from qgis.PyQt.QtCore import QDateTime, Qt
 
+from .module_asset import ModuleAsset
+
 
 class ModuleVersion:
 
@@ -9,13 +11,6 @@ class ModuleVersion:
         RELEASE = "release"
         BRANCH = "branch"
         PULL_REQUEST = "pull_request"
-
-    class Asset:
-        def __init__(self, name: str, label: str, download_url: str, size: int):
-            self.name = name
-            self.label = label
-            self.download_url = download_url
-            self.size = size
 
     def __init__(
         self,
@@ -81,23 +76,26 @@ class ModuleVersion:
 
         json_assets = r.json()
         for json_asset in json_assets:
-
-            asset = ModuleVersion.Asset(
+            asset = ModuleAsset(
                 name=json_asset["name"],
                 label=json_asset["label"],
                 download_url=json_asset["browser_download_url"],
                 size=json_asset["size"],
+                type=None,
             )
 
-            if asset.label == "oqtopus_datamodel":
+            if asset.label == ModuleAsset.Type.DATAMODEL.value:
+                asset.type = ModuleAsset.Type.DATAMODEL
                 self.asset_datamodel = asset
                 continue
 
-            if asset.label == "oqtopus_project":
+            if asset.label == ModuleAsset.Type.PROJECT.value:
+                asset.type = ModuleAsset.Type.PROJECT
                 self.asset_project = asset
                 continue
 
-            if asset.label == "oqtopus_plugin":
+            if asset.label == ModuleAsset.Type.PLUGIN.value:
+                asset.type = ModuleAsset.Type.PLUGIN
                 self.asset_plugin = asset
                 continue
 
