@@ -11,8 +11,9 @@ class ModuleVersion:
         PULL_REQUEST = "pull_request"
 
     class Asset:
-        def __init__(self, name: str, download_url: str, size: int):
+        def __init__(self, name: str, label: str, download_url: str, size: int):
             self.name = name
+            self.label = label
             self.download_url = download_url
             self.size = size
 
@@ -83,19 +84,20 @@ class ModuleVersion:
 
             asset = ModuleVersion.Asset(
                 name=json_asset["name"],
+                label=json_asset["label"],
                 download_url=json_asset["browser_download_url"],
                 size=json_asset["size"],
             )
 
-            if asset.name == "datamodel.zip":
+            if asset.label == "oqtopus_datamodel":
                 self.asset_datamodel = asset
                 continue
 
-            if asset.name == "project-translations.zip":
+            if asset.label == "oqtopus_project":
                 self.asset_project = asset
                 continue
 
-            if asset.name == "plugin.zip":
+            if asset.label == "oqtopus_plugin":
                 self.asset_plugin = asset
                 continue
 

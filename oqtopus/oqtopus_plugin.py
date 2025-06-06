@@ -34,6 +34,9 @@ class OqtopusPlugin:
 
         self.modules_registry = ModulesRegistry()
         self.modules_registry.register_module(
+            Module(name="OPENGIS.ch Wastewater", organisation="opengisch", repository="wastewater")
+        )
+        self.modules_registry.register_module(
             Module(name="TEKSI Wastewater", organisation="teksi", repository="wastewater")
         )
         self.modules_registry.register_module(
