@@ -5,7 +5,7 @@ import zipfile
 import requests
 from qgis.PyQt.QtCore import QThread, pyqtSignal
 
-from ..utils.plugin_utils import PluginUtils
+from ..utils.plugin_utils import PluginUtils, logger
 
 
 class PackagePrepareTask(QThread):
@@ -86,7 +86,7 @@ class PackagePrepareTask(QThread):
 
         self.__checkForCanceled()
 
-        # logging.info(f"Downloading from '{url}' to '{self.zip_file}'")
+        logger.info(f"Downloading from '{url}' to '{self.zip_file}'")
         data_size = 0
         with open(self.zip_file, "wb") as file:
             next_emit_threshold = 10 * 1024 * 1024  # 10MB threshold

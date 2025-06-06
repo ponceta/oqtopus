@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1651</width>
-    <height>818</height>
+    <width>1601</width>
+    <height>801</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,20 +113,57 @@
       <string>Logs</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_11">
-      <item row="0" column="0">
-       <widget class="QPlainTextEdit" name="logs_plainTextEdit">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+      <item row="0" column="1">
+       <widget class="QToolButton" name="logs_openFile_toolButton">
+        <property name="text">
+         <string>...</string>
         </property>
-        <property name="readOnly">
-         <bool>true</bool>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QToolButton" name="logs_openFolder_toolButton">
+        <property name="text">
+         <string>...</string>
         </property>
-        <property name="textInteractionFlags">
-         <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QToolButton" name="logs_clear_toolButton">
+        <property name="text">
+         <string>...</string>
         </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <spacer name="verticalSpacer_9">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="0" rowspan="4">
+       <widget class="QTreeWidget" name="logs_treeWidget">
+        <column>
+         <property name="text">
+          <string>Level</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Module</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Message</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>

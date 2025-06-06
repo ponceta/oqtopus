@@ -1,5 +1,3 @@
-import os
-
 import requests
 from qgis.PyQt.QtCore import QDateTime, Qt
 
@@ -11,6 +9,12 @@ class ModuleVersion:
         RELEASE = "release"
         BRANCH = "branch"
         PULL_REQUEST = "pull_request"
+
+    class Asset:
+        def __init__(self, name: str, download_url: str, size: int):
+            self.name = name
+            self.download_url = download_url
+            self.size = size
 
     def __init__(
         self,
@@ -28,6 +32,10 @@ class ModuleVersion:
         self.created_at = None
         self.prerelease = False
         self.html_url = None
+
+        self.asset_datamodel = None
+        self.asset_project = None
+        self.asset_plugin = None
 
         if self.type == ModuleVersion.Type.RELEASE:
             self.__parse_release(json_payload)
@@ -52,23 +60,6 @@ class ModuleVersion:
 
         return self.name
 
-    def download_zip(self, destination_directory: str):
-        # Define the directory and file path
-        os.makedirs(destination_directory, exist_ok=True)
-        file_path = os.path.join(destination_directory, f"{self.name}.zip")
-
-        # Download the file
-        r = requests.get(self.download_url, allow_redirects=True)
-
-        # Raise an exception in case of http errors
-        r.raise_for_status()
-
-        # Save the content to the specified file
-        with open(file_path, "wb") as file:
-            file.write(r.content)
-
-        return file_path
-
     def __parse_release(self, json_payload: dict):
         if self.name is None:
             self.name = json_payload["name"]
@@ -76,6 +67,41 @@ class ModuleVersion:
         self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.ISODate)
         self.prerelease = json_payload["prerelease"]
         self.html_url = json_payload["html_url"]
+
+        self.__parse_release_assets(json_payload["assets_url"])
+
+    def __parse_release_assets(self, assets_url: str):
+
+        # Load assets
+        r = requests.get(assets_url)
+
+        # Raise an exception in case of http errors
+        r.raise_for_status()
+
+        json_assets = r.json()
+        for json_asset in json_assets:
+
+            asset = ModuleVersion.Asset(
+                name=json_asset["name"],
+                download_url=json_asset["browser_download_url"],
+                size=json_asset["size"],
+            )
+
+            if asset.name == "datamodel.zip":
+                self.asset_datamodel = asset
+                continue
+
+            if asset.name == "project-translations.zip":
+                self.asset_project = asset
+                continue
+
+            if asset.name == "plugin.zip":
+                self.asset_plugin = asset
+                continue
+
+            if self.asset_datamodel and self.asset_project and self.asset_plugin:
+                # We already have all assets we need
+                break
 
     def __parse_pull_request(self, json_payload: dict):
         if self.name is None:

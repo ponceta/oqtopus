@@ -20,15 +20,28 @@
 import logging
 import os
 from logging import LogRecord
+from logging.handlers import TimedRotatingFileHandler
 
-from qgis.PyQt.QtCore import QObject, QSettings, QStandardPaths, pyqtSignal
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtCore import (
+    QDir,
+    QFileInfo,
+    QObject,
+    QSettings,
+    QStandardPaths,
+    QUrl,
+    pyqtSignal,
+)
+from qgis.PyQt.QtGui import QDesktopServices, QIcon
 from qgis.PyQt.uic import loadUiType
+
+logger = logging.getLogger("oqtopus")
 
 
 class PluginUtils:
 
     PLUGIN_NAME = "oqtopus Module Management Tool (Oqtopus)"
+
+    logsDirectory = ""
 
     @staticmethod
     def plugin_root_path():
@@ -76,6 +89,44 @@ class PluginUtils:
     def get_plugin_version():
         ini_text = QSettings(PluginUtils.get_metadata_file_path(), QSettings.IniFormat)
         return ini_text.value("version")
+
+    @staticmethod
+    def init_logger():
+        PluginUtils.logsDirectory = f"{PluginUtils.plugin_root_path()}/logs"
+
+        directory = QDir(PluginUtils.logsDirectory)
+        if not directory.exists():
+            directory.mkpath(PluginUtils.logsDirectory)
+
+        if directory.exists():
+            logfile = QFileInfo(directory, "Oqtopus.log")
+
+            # Handler for files rotation, create one log per day
+            rotationHandler = TimedRotatingFileHandler(
+                logfile.filePath(), when="midnight", backupCount=10
+            )
+
+            # Configure logging
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="%(asctime)s %(levelname)-7s %(message)s",
+                handlers=[rotationHandler],
+            )
+        else:
+            logger.error(f"Can't create log files directory '{PluginUtils.logsDirectory}'.")
+
+    @staticmethod
+    def open_logs_folder():
+        print(f"Opening logs folder {PluginUtils.logsDirectory}")
+        QDesktopServices.openUrl(QUrl.fromLocalFile(PluginUtils.logsDirectory))
+
+    @staticmethod
+    def open_log_file():
+        log_file_path = os.path.join(PluginUtils.logsDirectory, "Oqtopus.log")
+        if os.path.exists(log_file_path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(log_file_path))
+        else:
+            logger.error(f"Log file '{log_file_path}' does not exist.")
 
 
 class LoggingBridge(logging.Handler, QObject):

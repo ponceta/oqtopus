@@ -22,21 +22,29 @@
 #
 # ---------------------------------------------------------------------
 
-import logging
 import os
 import shutil
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
 from qgis.PyQt.QtGui import QColor, QDesktopServices
-from qgis.PyQt.QtWidgets import QAction, QDialog, QFileDialog, QMenu, QMessageBox
+from qgis.PyQt.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialog,
+    QFileDialog,
+    QMenu,
+    QMessageBox,
+    QStyle,
+    QTreeWidgetItem,
+)
 
 from ..core.package_prepare_task import PackagePrepareTask
 from ..libs import pgserviceparser
 from ..libs.pum.config import PumConfig
 from ..libs.pum.schema_migrations import SchemaMigrations
 from ..libs.pum.upgrader import Upgrader
-from ..utils.plugin_utils import LoggingBridge, PluginUtils
+from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import OverrideCursor, QtUtils
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
@@ -56,10 +64,9 @@ class MainDialog(QDialog, DIALOG_UI):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
-        self.logger = logging.getLogger()
         self.loggingBridge = LoggingBridge()
         self.loggingBridge.loggedLine.connect(self.__logged_line)
-        self.logger.addHandler(self.loggingBridge)
+        logger.addHandler(self.loggingBridge)
 
         self.buttonBox.rejected.connect(self.__closeDialog)
         self.buttonBox.helpRequested.connect(self.__helpRequested)
@@ -86,13 +93,16 @@ class MainDialog(QDialog, DIALOG_UI):
         # Init GUI Project
         self.__initGuiProject()
 
+        # Init GUI Logs
+        self.__initGuiLogs()
+
         self.__packagePrepareTask = PackagePrepareTask(self)
         self.__packagePrepareTask.finished.connect(self.__packagePrepareTaskFinished)
         self.__packagePrepareTask.signalPackagingProgress.connect(
             self.__packagePrepareTaskProgress
         )
 
-        self.logger.info("Ready.")
+        logger.info("Ready.")
 
     def __initGuiModules(self):
         self.module_module_comboBox.clear()
@@ -150,11 +160,29 @@ class MainDialog(QDialog, DIALOG_UI):
         self.project_install_pushButton.clicked.connect(self.__projectInstallClicked)
         self.project_seeChangelog_pushButton.clicked.connect(self.__projectSeeChangelogClicked)
 
+    def __initGuiLogs(self):
+        self.logs_openFile_toolButton.setIcon(
+            QApplication.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+        )
+        self.logs_openFolder_toolButton.setIcon(
+            QApplication.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon)
+        )
+        self.logs_clear_toolButton.setIcon(
+            QApplication.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarCloseButton)
+        )
+
+        self.logs_openFile_toolButton.clicked.connect(self.__logsOpenFileClicked)
+        self.logs_openFolder_toolButton.clicked.connect(self.__logsOpenFolderClicked)
+        self.logs_clear_toolButton.clicked.connect(self.__logsClearClicked)
+
     def __logged_line(self, record, line):
-        self.logs_plainTextEdit.appendPlainText(line)
+
+        treeWidgetItem = QTreeWidgetItem([record.levelname, record.name, record.msg])
+
+        self.logs_treeWidget.addTopLevelItem(treeWidgetItem)
 
         # Automatically scroll to the bottom of the logs
-        scroll_bar = self.logs_plainTextEdit.verticalScrollBar()
+        scroll_bar = self.logs_treeWidget.verticalScrollBar()
         scroll_bar.setValue(scroll_bar.maximum())
 
     def __closeDialog(self):
@@ -166,7 +194,7 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __helpRequested(self):
         help_page = "https://github.com/oqtopus/Oqtopus"
-        self.logger.info(f"Opening help page {help_page}")
+        logger.info(f"Opening help page {help_page}")
         QDesktopServices.openUrl(QUrl(help_page))
 
     def __loadDatabaseInformations(self):
@@ -197,6 +225,9 @@ class MainDialog(QDialog, DIALOG_UI):
 
         if self.__current_module is None:
             return
+
+        logger.info(f"Loading versions for module '{self.__current_module.name}'...")
+        QApplication.processEvents()
 
         with OverrideCursor(Qt.WaitCursor):
             if self.__current_module.versions == list():
@@ -249,7 +280,7 @@ class MainDialog(QDialog, DIALOG_UI):
         )
         self.module_information_label.setText(loading_text)
         QtUtils.resetForegroundColor(self.module_information_label)
-        self.logger.info(loading_text)
+        logger.info(loading_text)
 
         if self.__packagePrepareTask.isRunning():
             self.__packagePrepareTask.cancel()
@@ -312,7 +343,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__packagePrepareTask.startFromZip(filename)
 
     def __packagePrepareTaskFinished(self):
-        self.logger.info("Load package task finished")
+        logger.info("Load package task finished")
 
         if self.__packagePrepareTask.lastError is not None:
             error_text = f"Can't load module package:\n{self.__packagePrepareTask.lastError}"
@@ -326,7 +357,7 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         self.__package_dir = self.__packagePrepareTask.package_dir
-        self.logger.info(f"Package loaded into '{self.__package_dir}'")
+        logger.info(f"Package loaded into '{self.__package_dir}'")
         self.module_information_label.setText(self.__package_dir)
         QtUtils.resetForegroundColor(self.module_information_label)
 
@@ -417,7 +448,7 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __packagePrepareTaskProgress(self, progress):
         loading_text = self.tr("Load package task running...")
-        self.logger.info(loading_text)
+        logger.info(loading_text)
         self.module_information_label.setText(loading_text)
 
     def __seeChangeLogClicked(self):
@@ -448,7 +479,7 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         changelog_url = current_module_version.html_url
-        self.logger.info(f"Opening changelog URL: {changelog_url}")
+        logger.info(f"Opening changelog URL: {changelog_url}")
         QDesktopServices.openUrl(QUrl(changelog_url))
 
     def __serviceChanged(self, index=None):
@@ -720,3 +751,12 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __projectSeeChangelogClicked(self):
         self.__seeChangeLogClicked()
+
+    def __logsOpenFileClicked(self):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(PluginUtils.plugin_temp_path()))
+
+    def __logsOpenFolderClicked(self):
+        PluginUtils.open_logs_folder()
+
+    def __logsClearClicked(self):
+        self.logs_treeWidget.clear()
