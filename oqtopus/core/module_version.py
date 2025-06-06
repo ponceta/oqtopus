@@ -11,6 +11,7 @@ class ModuleVersion:
         RELEASE = "release"
         BRANCH = "branch"
         PULL_REQUEST = "pull_request"
+        FROM_ZIP = "from_zip"
 
     def __init__(
         self,
@@ -39,6 +40,8 @@ class ModuleVersion:
             pass
         elif self.type == ModuleVersion.Type.PULL_REQUEST:
             self.__parse_pull_request(json_payload)
+        elif self.type == ModuleVersion.Type.FROM_ZIP:
+            return
         else:
             raise ValueError(f"Unknown type '{type}'")
 

@@ -133,11 +133,16 @@ class LoggingBridge(logging.Handler, QObject):
 
     loggedLine = pyqtSignal(LogRecord, str)
 
-    def __init__(self, level=logging.NOTSET):
+    def __init__(self, level=logging.NOTSET, excluded_modules=[]):
         QObject.__init__(self)
         logging.Handler.__init__(self, level)
 
         self.formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+
+        self.excluded_modules = excluded_modules
+
+    def filter(self, record):
+        return record.name not in self.excluded_modules
 
     def emit(self, record):
         log_entry = self.format(record)

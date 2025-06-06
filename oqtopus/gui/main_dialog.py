@@ -25,6 +25,7 @@
 import logging
 import os
 import shutil
+import traceback
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
@@ -41,6 +42,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from ..core.module import Module
+from ..core.module_version import ModuleVersion
 from ..core.package_prepare_task import PackagePrepareTask
 from ..libs import pgserviceparser
 from ..libs.pum.config import PumConfig
@@ -56,7 +58,6 @@ DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 
 class MainDialog(QDialog, DIALOG_UI):
 
-    MODULE_VERSION_SPECIAL_LOAD_FROM_ZIP = "Load from ZIP"
     MODULE_VERSION_SPECIAL_LOAD_DEVELOPMENT = "Load development versions"
 
     COLOR_GREEN = QColor(12, 167, 137)
@@ -66,7 +67,9 @@ class MainDialog(QDialog, DIALOG_UI):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
-        self.loggingBridge = LoggingBridge()
+        self.loggingBridge = LoggingBridge(
+            level=logging.NOTSET, excluded_modules=["urllib3.connectionpool"]
+        )
         self.loggingBridge.loggedLine.connect(self.__logged_line)
         logging.getLogger().addHandler(self.loggingBridge)
 
@@ -78,7 +81,6 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.__database_connection = None
 
-        self.__package_dir = None
         self.__data_model_dir = None
         self.__pum_config = None
         self.__project_file = None
@@ -234,21 +236,42 @@ class MainDialog(QDialog, DIALOG_UI):
         logger.info(f"Loading versions for module '{self.__current_module.name}'...")
         QApplication.processEvents()
 
-        with OverrideCursor(Qt.WaitCursor):
-            if self.__current_module.versions == list():
-                self.__current_module.load_versions()
+        try:
+            with OverrideCursor(Qt.WaitCursor):
+                if self.__current_module.versions == list():
+                    self.__current_module.load_versions()
 
-            for module_version in self.__current_module.versions:
-                self.module_version_comboBox.addItem(module_version.display_name(), module_version)
+                for module_version in self.__current_module.versions:
+                    self.module_version_comboBox.addItem(
+                        module_version.display_name(), module_version
+                    )
 
-            if self.__current_module.latest_version is not None:
-                self.module_latestVersion_label.setText(
-                    f"Latest: {self.__current_module.latest_version.name}"
-                )
+                if self.__current_module.latest_version is not None:
+                    self.module_latestVersion_label.setText(
+                        f"Latest: {self.__current_module.latest_version.name}"
+                    )
+
+        except Exception as exception:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle(self.tr("Error"))
+            msg_box.setText(self.tr(f"Can't load module versions:\n{exception}"))
+            details = "".join(
+                traceback.format_exception(type(exception), exception, exception.__traceback__)
+            )
+            msg_box.setDetailedText(details)
+            msg_box.exec_()
+            return
 
         self.module_version_comboBox.insertSeparator(self.module_version_comboBox.count())
         self.module_version_comboBox.addItem(
-            self.tr("Load from ZIP file"), self.MODULE_VERSION_SPECIAL_LOAD_FROM_ZIP
+            self.tr("Load from ZIP file"),
+            ModuleVersion(
+                organisation=self.__current_module.organisation,
+                repository=self.__current_module.repository,
+                json_payload=None,
+                type=ModuleVersion.Type.FROM_ZIP,
+            ),
         )
 
         self.module_version_comboBox.insertSeparator(self.module_version_comboBox.count())
@@ -257,12 +280,6 @@ class MainDialog(QDialog, DIALOG_UI):
         )
 
     def __moduleVersionChanged(self, index):
-
-        if self.module_version_comboBox.currentData() == self.MODULE_VERSION_SPECIAL_LOAD_FROM_ZIP:
-            self.module_zipPackage_groupBox.setVisible(True)
-            return
-        else:
-            self.module_zipPackage_groupBox.setVisible(False)
 
         if (
             self.module_version_comboBox.currentData()
@@ -275,7 +292,12 @@ class MainDialog(QDialog, DIALOG_UI):
         if current_module_version is None:
             return
 
-        self.__package_dir = None
+        if current_module_version.type == current_module_version.Type.FROM_ZIP:
+            self.module_zippackage_groupBox.setVisible(True)
+            return
+        else:
+            self.module_zipPackage_groupBox.setVisible(False)
+
         self.__data_model_dir = None
         self.__pum_config = None
         self.__project_file = None
@@ -336,7 +358,6 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __loadModuleFromZip(self, filename):
 
-        self.__package_dir = None
         self.__data_model_dir = None
         self.__pum_config = None
         self.__project_file = None
@@ -352,18 +373,27 @@ class MainDialog(QDialog, DIALOG_UI):
 
         if self.__packagePrepareTask.lastError is not None:
             error_text = f"Can't load module package:\n{self.__packagePrepareTask.lastError}"
+            # Get the stack trace as a string
+            details = "".join(
+                traceback.format_exception(
+                    type(self.__packagePrepareTask.lastError),
+                    self.__packagePrepareTask.lastError,
+                    self.__packagePrepareTask.lastError.__traceback__,
+                )
+            )
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle(self.tr("Error"))
+            msg_box.setText(self.tr(error_text))
+            msg_box.setDetailedText(details)
+            msg_box.exec_()
             self.module_information_label.setText(error_text)
             QtUtils.setForegroundColor(self.module_information_label, self.COLOR_WARNING)
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr(error_text),
-            )
             return
 
-        self.__package_dir = self.__packagePrepareTask.package_dir
-        logger.info(f"Package loaded into '{self.__package_dir}'")
-        self.module_information_label.setText(self.__package_dir)
+        package_dir = self.module_version_comboBox.currentData().package_dir
+        logger.info(f"Package loaded into '{package_dir}'")
+        self.module_information_label.setText(package_dir)
         QtUtils.resetForegroundColor(self.module_information_label)
 
         self.__packagePrepareGetPUMConfig()
@@ -371,8 +401,8 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__packagePrepareGetProjectFilename()
 
     def __packagePrepareGetPUMConfig(self):
-
-        self.__data_model_dir = os.path.join(self.__package_dir, "datamodel")
+        package_dir = self.module_version_comboBox.currentData().package_dir
+        self.__data_model_dir = os.path.join(package_dir, "datamodel")
         pumConfigFilename = os.path.join(self.__data_model_dir, ".pum.yaml")
         if not os.path.exists(pumConfigFilename):
             QMessageBox.critical(
@@ -416,7 +446,8 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __packagePrepareGetProjectFilename(self):
         # Search for QGIS project file in self.__package_dir
-        project_file_dir = os.path.join(self.__package_dir, "project")
+        package_dir = self.module_version_comboBox.currentData().asset_project.package_dir
+        project_file_dir = os.path.join(package_dir, "project")
 
         # Check if the directory exists
         if not os.path.exists(project_file_dir):
@@ -678,8 +709,7 @@ class MainDialog(QDialog, DIALOG_UI):
             )
             return
 
-        current_module_version = self.module_version_comboBox.currentData()
-        if current_module_version is None:
+        if self.module_version_comboBox.currentData() is None:
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
@@ -687,7 +717,17 @@ class MainDialog(QDialog, DIALOG_UI):
             )
             return
 
-        if self.__package_dir is None:
+        asset_project = self.module_version_comboBox.currentData().asset_project
+        if asset_project is None:
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("No project asset available for this module version."),
+            )
+            return
+
+        package_dir = asset_project.package_dir
+        if package_dir is None:
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -695,8 +735,8 @@ class MainDialog(QDialog, DIALOG_UI):
             )
             return
 
-        # Search for QGIS project file in self.__package_dir
-        project_file_dir = os.path.join(self.__package_dir, "project")
+        # Search for QGIS project file in package_dir
+        project_file_dir = os.path.join(package_dir, "project")
 
         # Check if the directory exists
         if not os.path.exists(project_file_dir):
