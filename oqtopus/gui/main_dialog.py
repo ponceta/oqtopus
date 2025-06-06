@@ -39,6 +39,7 @@ from qgis.PyQt.QtWidgets import (
     QTreeWidgetItem,
 )
 
+from ..core.module import Module
 from ..core.package_prepare_task import PackagePrepareTask
 from ..libs import pgserviceparser
 from ..libs.pum.config import PumConfig
@@ -60,7 +61,7 @@ class MainDialog(QDialog, DIALOG_UI):
     COLOR_GREEN = QColor(12, 167, 137)
     COLOR_WARNING = QColor(255, 165, 0)
 
-    def __init__(self, modules_registry, parent=None):
+    def __init__(self, modules_config, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
@@ -71,7 +72,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.buttonBox.rejected.connect(self.__closeDialog)
         self.buttonBox.helpRequested.connect(self.__helpRequested)
 
-        self.__modules_registry = modules_registry
+        self.__modules_config = modules_config
         self.__current_module = None
 
         self.__database_connection = None
@@ -107,7 +108,10 @@ class MainDialog(QDialog, DIALOG_UI):
     def __initGuiModules(self):
         self.module_module_comboBox.clear()
         self.module_module_comboBox.addItem(self.tr("Please select a module"), None)
-        for module in self.__modules_registry.modules():
+        for config_module in self.__modules_config.modules:
+            module = Module(
+                config_module.name, config_module.organisation, config_module.repository
+            )
             self.module_module_comboBox.addItem(module.name, module)
 
         self.module_latestVersion_label.setText("")

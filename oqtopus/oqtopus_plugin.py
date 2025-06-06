@@ -1,8 +1,9 @@
+import os
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QApplication
 
-from .core.module import Module
-from .core.modules_registry import ModulesRegistry
+from .core.modules_config import load_modules_from_conf
 from .gui.about_dialog import AboutDialog
 from .gui.main_dialog import MainDialog
 from .utils.plugin_utils import PluginUtils, logger
@@ -32,18 +33,8 @@ class OqtopusPlugin:
         self.actions = []
         self.main_menu_name = self.tr(f"&{PluginUtils.PLUGIN_NAME}")
 
-        self.modules_registry = ModulesRegistry()
-        self.modules_registry.register_module(
-            Module(name="OPENGIS.ch Wastewater", organisation="opengisch", repository="wastewater")
-        )
-        self.modules_registry.register_module(
-            Module(name="TEKSI Wastewater", organisation="teksi", repository="wastewater")
-        )
-        self.modules_registry.register_module(
-            Module(
-                name="TEKSI District Heating", organisation="teksi", repository="district_heating"
-            )
-        )
+        conf_path = os.path.join(os.path.dirname(__file__), "../default_config.conf")
+        self.modules_config = load_modules_from_conf(conf_path)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, source_text):
@@ -163,7 +154,7 @@ class OqtopusPlugin:
             self.iface.removeToolBarIcon(action)
 
     def show_main_dialog(self):
-        main_dialog = MainDialog(self.modules_registry, self.iface.mainWindow())
+        main_dialog = MainDialog(self.modules_config, self.iface.mainWindow())
         main_dialog.exec_()
 
     def show_logs_folder(self):
