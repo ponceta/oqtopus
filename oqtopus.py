@@ -2,29 +2,35 @@ import os
 import sys
 import types
 
-from qgis.PyQt.QtGui import QIcon
-
 # Create fake qgis.PyQt modules that point to PyQt5 modules
-pyqt5_widgets = __import__("PyQt5.QtWidgets", fromlist=[""])
-pyqt5_core = __import__("PyQt5.QtCore", fromlist=[""])
-pyqt5_gui = __import__("PyQt5.QtGui", fromlist=[""])
-pyqt5_uic = __import__("PyQt5.uic", fromlist=[""])
+try:
+    pyqt_widgets = __import__("PyQt6.QtWidgets", fromlist=[""])
+    pyqt_core = __import__("PyQt6.QtCore", fromlist=[""])
+    pyqt_gui = __import__("PyQt6.QtGui", fromlist=[""])
+    pyqt_uic = __import__("PyQt6.uic", fromlist=[""])
+except ModuleNotFoundError:
+    pyqt_widgets = __import__("PyQt5.QtWidgets", fromlist=[""])
+    pyqt_core = __import__("PyQt5.QtCore", fromlist=[""])
+    pyqt_gui = __import__("PyQt5.QtGui", fromlist=[""])
+    pyqt_uic = __import__("PyQt5.uic", fromlist=[""])
 
 # Create the qgis, qgis.PyQt, and submodules in sys.modules
 qgis = types.ModuleType("qgis")
 pyqt = types.ModuleType("qgis.PyQt")
-pyqt.QtWidgets = pyqt5_widgets
-pyqt.QtCore = pyqt5_core
-pyqt.QtGui = pyqt5_gui
-pyqt.uic = pyqt5_uic
+pyqt.QtWidgets = pyqt_widgets
+pyqt.QtCore = pyqt_core
+pyqt.QtGui = pyqt_gui
+pyqt.uic = pyqt_uic
 
 qgis.PyQt = pyqt
 sys.modules["qgis"] = qgis
 sys.modules["qgis.PyQt"] = pyqt
-sys.modules["qgis.PyQt.QtWidgets"] = pyqt5_widgets
-sys.modules["qgis.PyQt.QtCore"] = pyqt5_core
-sys.modules["qgis.PyQt.QtGui"] = pyqt5_gui
-sys.modules["qgis.PyQt.uic"] = pyqt5_uic
+sys.modules["qgis.PyQt.QtWidgets"] = pyqt_widgets
+sys.modules["qgis.PyQt.QtCore"] = pyqt_core
+sys.modules["qgis.PyQt.QtGui"] = pyqt_gui
+sys.modules["qgis.PyQt.uic"] = pyqt_uic
+
+from qgis.PyQt.QtGui import QIcon  # noqa: E402
 
 from oqtopus.core.modules_config import load_modules_from_conf  # noqa: E402
 from oqtopus.gui.main_dialog import MainDialog  # noqa: E402
@@ -32,7 +38,7 @@ from oqtopus.utils.plugin_utils import PluginUtils  # noqa: E402
 
 
 def main():
-    app = pyqt5_widgets.QApplication(sys.argv)
+    app = pyqt_widgets.QApplication(sys.argv)
     icon = QIcon("oqtopus/icons/oqtopus-logo.png")
     app.setWindowIcon(icon)
 
