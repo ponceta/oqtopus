@@ -1,5 +1,3 @@
-from typing import List
-
 import tomli
 from pydantic import BaseModel
 
@@ -11,7 +9,7 @@ class ModuleConfig(BaseModel):
 
 
 class ModulesConfig(BaseModel):
-    modules: List[ModuleConfig]
+    modules: list[ModuleConfig]
 
 
 def load_modules_from_conf(conf_path: str) -> ModulesConfig:
