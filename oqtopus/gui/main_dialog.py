@@ -28,9 +28,8 @@ import shutil
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
-from qgis.PyQt.QtGui import QColor, QDesktopServices
+from qgis.PyQt.QtGui import QAction, QColor, QDesktopServices
 from qgis.PyQt.QtWidgets import (
-    QAction,
     QApplication,
     QDialog,
     QFileDialog,

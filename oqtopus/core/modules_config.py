@@ -1,4 +1,3 @@
-import tomli
 from pydantic import BaseModel
 
 
@@ -10,9 +9,3 @@ class ModuleConfig(BaseModel):
 
 class ModulesConfig(BaseModel):
     modules: list[ModuleConfig]
-
-
-def load_modules_from_conf(conf_path: str) -> ModulesConfig:
-    with open(conf_path, "rb") as f:
-        data = tomli.load(f)
-    return ModulesConfig(**data)
