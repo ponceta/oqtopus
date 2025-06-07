@@ -671,18 +671,23 @@ class MainDialog(QDialog, DIALOG_UI):
 
         try:
             service_name = self.db_services_comboBox.currentText()
-            upgrader = Upgrader(
-                pg_service=service_name,
-                config=self.__pum_config,
-                dir=self.__data_model_dir,
-                parameters={"SRID": srid},
-            )
-            with OverrideCursor(Qt.CursorShape.WaitCursor):
-                upgrader.install(
-                    roles=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
-                    grant=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
-                    demo_data=self.db_parameters_DemoData_checkBox.isChecked(),
-                )
+            with psycopg.connect(f"service={service_name}") as connection:
+                # Check if the connection is successful
+                if not connection:
+                    raise Exception(
+                        f"Could not connect to the database using service: {service_name}"
+                    )
+
+                upgrader = Upgrader(config=self.__pum_config)
+                with OverrideCursor(Qt.CursorShape.WaitCursor):
+                    upgrader.install(
+                        connection=connection,
+                        parameters={"SRID": srid},
+                        roles=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
+                        grant=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
+                        demo_data=self.db_parameter_demoData_comboBox.currentData(),
+                        dir=self.__data_model_dir,
+                    )
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't install the module:"), exception, self

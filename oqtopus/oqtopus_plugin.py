@@ -1,9 +1,11 @@
-import os
+from pathlib import Path
 
+import yaml
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QApplication
 
-from .core.modules_config import load_modules_from_conf
+from oqtopus.core.modules_config import ModulesConfig
+
 from .gui.about_dialog import AboutDialog
 from .gui.main_dialog import MainDialog
 from .utils.plugin_utils import PluginUtils, logger
@@ -33,8 +35,11 @@ class OqtopusPlugin:
         self.actions = []
         self.main_menu_name = self.tr(f"&{PluginUtils.PLUGIN_NAME}")
 
-        conf_path = os.path.join(os.path.dirname(__file__), "default_config.conf")
-        self.modules_config = load_modules_from_conf(conf_path)
+        conf_path = Path(__file__).parent / "oqtopus/default_config.yaml"
+
+        with conf_path.open() as f:
+            data = yaml.safe_load(f)
+            self.modules_config = ModulesConfig(**data)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, source_text):
