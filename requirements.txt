@@ -1,2 +1,2 @@
 pgserviceparser >= 2.3.0
-git+https://github.com/opengisch/pum.git
+pum >= 1.1.1

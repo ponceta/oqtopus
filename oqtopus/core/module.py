@@ -1,5 +1,6 @@
 import requests
 
+from ..utils.plugin_utils import PluginUtils
 from .module_version import ModuleVersion
 
 
@@ -17,7 +18,8 @@ class Module:
 
     def load_versions(self):
         r = requests.get(
-            f"https://api.github.com/repos/{self.organisation}/{self.repository}/releases"
+            f"https://api.github.com/repos/{self.organisation}/{self.repository}/releases",
+            headers=PluginUtils.get_github_headers(),
         )
 
         # Raise an exception in case of http errors
@@ -74,7 +76,8 @@ class Module:
 
         # Load versions from pull requests
         r = requests.get(
-            f"https://api.github.com/repos/{self.organisation}/{self.repository}/pulls"
+            f"https://api.github.com/repos/{self.organisation}/{self.repository}/pulls",
+            headers=PluginUtils.get_github_headers(),
         )
 
         # Raise an exception in case of http errors

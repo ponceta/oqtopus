@@ -35,6 +35,7 @@ from qgis.PyQt.QtWidgets import (
     QDialog,
     QFileDialog,
     QMenu,
+    QMenuBar,
     QMessageBox,
     QStyle,
     QTreeWidgetItem,
@@ -44,13 +45,15 @@ from ..core.module import Module
 from ..core.module_version import ModuleVersion
 from ..core.package_prepare_task import PackagePrepareTask
 from ..libs import pgserviceparser
-from ..libs.pum.config import PumConfig
+from ..libs.pum.pum_config import PumConfig
 from ..libs.pum.schema_migrations import SchemaMigrations
 from ..libs.pum.upgrader import Upgrader
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
+from .about_dialog import AboutDialog
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
+from .settings_dialog import SettingsDialog
 
 DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 
@@ -104,6 +107,22 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__packagePrepareTask.signalPackagingProgress.connect(
             self.__packagePrepareTaskProgress
         )
+
+        # Add menubar
+        self.menubar = QMenuBar(self)
+        self.layout().setMenuBar(self.menubar)
+
+        # Settings action
+        settings_action = QAction(self.tr("Settings"), self)
+        settings_action.triggered.connect(self.__open_settings_dialog)
+
+        # About action
+        about_action = QAction(self.tr("About"), self)
+        about_action.triggered.connect(self.__show_about_dialog)
+
+        # Add actions to menubar
+        self.menubar.addAction(settings_action)
+        self.menubar.addAction(about_action)
 
         logger.info("Ready.")
 
@@ -299,7 +318,7 @@ class MainDialog(QDialog, DIALOG_UI):
         QtUtils.resetForegroundColor(self.module_information_label)
         logger.info(loading_text)
 
-        self.module_informationDemodatal_label.setText("-")
+        self.module_informationDatamodel_label.setText("-")
         self.module_informationProject_label.setText("-")
         self.module_informationPlugin_label.setText("-")
 
@@ -379,9 +398,9 @@ class MainDialog(QDialog, DIALOG_UI):
 
         asset_datamodel = self.module_version_comboBox.currentData().asset_datamodel
         if asset_datamodel:
-            self.module_informationDemodata_label.setText(asset_datamodel.package_dir)
+            self.module_informationDatamodel_label.setText(asset_datamodel.package_dir)
         else:
-            self.module_informationDemodata_label.setText("No asset available")
+            self.module_informationDatamodel_label.setText("No asset available")
 
         asset_project = self.module_version_comboBox.currentData().asset_project
         if asset_project:
@@ -414,7 +433,7 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         try:
-            self.__pum_config = PumConfig.from_yaml(pumConfigFilename)
+            self.__pum_config = PumConfig.from_yaml(pumConfigFilename, install_dependencies=True)
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"),
@@ -802,3 +821,11 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __logsClearClicked(self):
         self.logs_treeWidget.clear()
+
+    def __open_settings_dialog(self):
+        dlg = SettingsDialog(self)
+        dlg.exec_()
+
+    def __show_about_dialog(self):
+        dialog = AboutDialog(self)
+        dialog.exec_()

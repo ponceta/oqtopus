@@ -1,6 +1,7 @@
 import requests
 from qgis.PyQt.QtCore import QDateTime, Qt
 
+from ..utils.plugin_utils import PluginUtils
 from .module_asset import ModuleAsset
 
 
@@ -72,7 +73,7 @@ class ModuleVersion:
     def __parse_release_assets(self, assets_url: str):
 
         # Load assets
-        r = requests.get(assets_url)
+        r = requests.get(assets_url, headers=PluginUtils.get_github_headers())
 
         # Raise an exception in case of http errors
         r.raise_for_status()

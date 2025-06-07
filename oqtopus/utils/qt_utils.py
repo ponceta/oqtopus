@@ -85,4 +85,4 @@ class CriticalMessageBox(QMessageBox):
 
     def showEvent(self, event):
         super().showEvent(event)
-        self.resize(700, 400)  # Set your preferred initial size here
+        self.resize(700, 1000)  # Set your preferred initial size here

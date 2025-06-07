@@ -128,6 +128,24 @@ class PluginUtils:
         else:
             logger.error(f"Log file '{log_file_path}' does not exist.")
 
+    @staticmethod
+    def get_github_token():
+        settings = QSettings()
+        return settings.value("oqtopus/github_token", type=str)
+
+    @staticmethod
+    def set_github_token(token: str):
+        settings = QSettings()
+        settings.setValue("oqtopus/github_token", token)
+
+    @staticmethod
+    def get_github_headers():
+        token = PluginUtils.get_github_token()
+        headers = {}
+        if token:
+            headers["Authorization"] = f"token {token}"
+        return headers
+
 
 class LoggingBridge(logging.Handler, QObject):
 
