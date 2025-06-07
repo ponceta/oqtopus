@@ -72,7 +72,7 @@ class QtUtils:
 class CriticalMessageBox(QMessageBox):
     def __init__(self, title: str, description: str, exception: Exception = None, parent=None):
         super().__init__(parent)
-        self.setIcon(QMessageBox.Critical)
+        self.setIcon(QMessageBox.Icon.Critical)
         self.setWindowTitle(title)
         message = description
         if exception is not None:

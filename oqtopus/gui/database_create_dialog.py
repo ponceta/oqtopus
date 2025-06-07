@@ -51,7 +51,7 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
         self.parameters_ssl_comboBox.addItem("Not set", None)
         notSetFont = self.parameters_ssl_comboBox.font()
         notSetFont.setItalic(True)
-        self.parameters_ssl_comboBox.setItemData(0, notSetFont, Qt.FontRole)
+        self.parameters_ssl_comboBox.setItemData(0, notSetFont, Qt.ItemDataRole.FontRole)
         self.parameters_ssl_comboBox.addItem("disable", "disable")
         self.parameters_ssl_comboBox.addItem("allow", "allow")
         self.parameters_ssl_comboBox.addItem("prefer", "prefer")

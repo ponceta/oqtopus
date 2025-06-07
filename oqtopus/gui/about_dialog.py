@@ -39,7 +39,7 @@ class AboutDialog(QDialog, DIALOG_UI):
 
         metadata_file_path = PluginUtils.get_metadata_file_path()
 
-        ini_text = QSettings(metadata_file_path, QSettings.IniFormat)
+        ini_text = QSettings(metadata_file_path, QSettings.Format.IniFormat)
         version = ini_text.value("version")
         name = ini_text.value("name")
         description = "".join(ini_text.value("description"))
@@ -53,6 +53,6 @@ class AboutDialog(QDialog, DIALOG_UI):
         self.qgisMinimumVersionLabel.setText(qgisMinimumVersion)
 
         scaled_logo = QPixmap(PluginUtils.get_plugin_icon_path("oqtopus-logo.png")).scaled(
-            254, 254, aspectRatioMode=1, transformMode=Qt.SmoothTransformation
+            254, 254, aspectRatioMode=1, transformMode=Qt.TransformationMode.SmoothTransformation
         )
         self.iconLabel.setPixmap(scaled_logo)

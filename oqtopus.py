@@ -2,7 +2,7 @@ import os
 import sys
 import types
 
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon
 
 # Create fake qgis.PyQt modules that point to PyQt5 modules
 pyqt5_widgets = __import__("PyQt5.QtWidgets", fromlist=[""])
@@ -45,7 +45,7 @@ def main():
     dialog.setWindowIcon(icon)
     dialog.show()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

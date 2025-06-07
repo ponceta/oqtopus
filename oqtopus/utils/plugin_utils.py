@@ -55,7 +55,8 @@ class PluginUtils:
         plugin_basename = PluginUtils.plugin_root_path().split(os.sep)[-1]
 
         plugin_temp_dir = os.path.join(
-            QStandardPaths.writableLocation(QStandardPaths.TempLocation), plugin_basename
+            QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation),
+            plugin_basename,
         )
         if not os.path.exists(plugin_temp_dir):
             os.makedirs(plugin_temp_dir)
@@ -87,7 +88,7 @@ class PluginUtils:
 
     @staticmethod
     def get_plugin_version():
-        ini_text = QSettings(PluginUtils.get_metadata_file_path(), QSettings.IniFormat)
+        ini_text = QSettings(PluginUtils.get_metadata_file_path(), QSettings.Format.IniFormat)
         return ini_text.value("version")
 
     @staticmethod

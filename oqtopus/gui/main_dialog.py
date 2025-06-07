@@ -250,7 +250,7 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         try:
-            with OverrideCursor(Qt.WaitCursor):
+            with OverrideCursor(Qt.CursorShape.WaitCursor):
                 if self.__current_module.versions == list():
                     self.__current_module.load_versions()
 
@@ -332,7 +332,7 @@ class MainDialog(QDialog, DIALOG_UI):
         if self.__current_module is None:
             return
 
-        with OverrideCursor(Qt.WaitCursor):
+        with OverrideCursor(Qt.CursorShape.WaitCursor):
             self.__current_module.load_development_versions()
 
         if self.__current_module.development_versions == list():
@@ -359,7 +359,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.module_fromZip_lineEdit.setText(filename)
 
         try:
-            with OverrideCursor(Qt.WaitCursor):
+            with OverrideCursor(Qt.CursorShape.WaitCursor):
                 self.__loadModuleFromZip(filename)
         except Exception as exception:
             CriticalMessageBox(
@@ -606,7 +606,7 @@ class MainDialog(QDialog, DIALOG_UI):
             selected_service=self.db_services_comboBox.currentText(), parent=self
         )
 
-        if databaseCreateDialog.exec_() == QDialog.Rejected:
+        if databaseCreateDialog.exec() == QDialog.DialogCode.Rejected:
             return
 
         self.__loadDatabaseInformations()
@@ -619,7 +619,7 @@ class MainDialog(QDialog, DIALOG_UI):
         databaseDuplicateDialog = DatabaseDuplicateDialog(
             selected_service=self.db_services_comboBox.currentText(), parent=self
         )
-        if databaseDuplicateDialog.exec_() == QDialog.Rejected:
+        if databaseDuplicateDialog.exec() == QDialog.DialogCode.Rejected:
             return
 
     def __installModuleClicked(self):
@@ -669,7 +669,7 @@ class MainDialog(QDialog, DIALOG_UI):
                 dir=self.__data_model_dir,
                 parameters={"SRID": srid},
             )
-            with OverrideCursor(Qt.WaitCursor):
+            with OverrideCursor(Qt.CursorShape.WaitCursor):
                 upgrader.install()
         except Exception as exception:
             CriticalMessageBox(
@@ -786,7 +786,7 @@ class MainDialog(QDialog, DIALOG_UI):
             self,
             self.tr("Select installation directory"),
             "",
-            QFileDialog.ShowDirsOnly,
+            QFileDialog.Option.ShowDirsOnly,
         )
 
         if not install_destination:
@@ -824,8 +824,8 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __open_settings_dialog(self):
         dlg = SettingsDialog(self)
-        dlg.exec_()
+        dlg.exec()
 
     def __show_about_dialog(self):
         dialog = AboutDialog(self)
-        dialog.exec_()
+        dialog.exec()

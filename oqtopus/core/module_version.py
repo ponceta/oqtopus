@@ -64,7 +64,7 @@ class ModuleVersion:
         if self.name is None:
             self.name = json_payload["name"]
         self.branch = self.name
-        self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.ISODate)
+        self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.DateFormat.ISODate)
         self.prerelease = json_payload["prerelease"]
         self.html_url = json_payload["html_url"]
 
@@ -111,6 +111,6 @@ class ModuleVersion:
         if self.name is None:
             self.name = f"#{json_payload['number']} {json_payload['title']}"
         self.branch = json_payload["head"]["ref"]
-        self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.ISODate)
+        self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.DateFormat.ISODate)
         self.prerelease = False
         self.html_url = json_payload["html_url"]
