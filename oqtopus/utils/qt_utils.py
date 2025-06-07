@@ -54,7 +54,7 @@ class QtUtils:
         palette = widget.palette()
         palette.setColor(
             widget.foregroundRole(),
-            QApplication.style().standardPalette().color(palette.WindowText),
+            QApplication.style().standardPalette().color(palette.ColorRole.WindowText),
         )
         widget.setPalette(palette)
 
@@ -82,6 +82,12 @@ class CriticalMessageBox(QMessageBox):
             )
             self.setDetailedText(details)
         self.setText(message)
+
+    def exec(self):
+        try:
+            return super().exec()
+        except Exception:
+            return super().exec_()
 
     def showEvent(self, event):
         super().showEvent(event)

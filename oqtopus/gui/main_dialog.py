@@ -239,7 +239,7 @@ class MainDialog(QDialog, DIALOG_UI):
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't load database services:"), exception, self
-            ).exec_()
+            ).exec()
             return
 
     def __moduleChanged(self, index):
@@ -273,7 +273,7 @@ class MainDialog(QDialog, DIALOG_UI):
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't load module versions:"), exception, self
-            ).exec_()
+            ).exec()
             return
 
         self.module_version_comboBox.insertSeparator(self.module_version_comboBox.count())
@@ -370,7 +370,7 @@ class MainDialog(QDialog, DIALOG_UI):
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't load module from zip file:"), exception, self
-            ).exec_()
+            ).exec()
             return
 
     def __loadModuleFromZip(self, filename):
@@ -392,7 +392,7 @@ class MainDialog(QDialog, DIALOG_UI):
             error_text = self.tr("Can't load module package:")
             CriticalMessageBox(
                 self.tr("Error"), error_text, self.__packagePrepareTask.lastError, self
-            ).exec_()
+            ).exec()
             self.module_information_label.setText(error_text)
             QtUtils.setForegroundColor(self.module_information_label, self.COLOR_WARNING)
             return
@@ -435,7 +435,7 @@ class MainDialog(QDialog, DIALOG_UI):
                 ),
                 None,
                 self,
-            ).exec_()
+            ).exec()
             return
 
         try:
@@ -446,7 +446,7 @@ class MainDialog(QDialog, DIALOG_UI):
                 self.tr(f"Can't load PUM config from '{pumConfigFilename}':"),
                 exception,
                 self,
-            ).exec_()
+            ).exec()
             return
 
         logger.info(f"PUM config loaded from '{pumConfigFilename}'")
@@ -633,26 +633,26 @@ class MainDialog(QDialog, DIALOG_UI):
         if self.__current_module is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a module first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         current_module_version = self.module_version_comboBox.currentData()
         if current_module_version is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a module version first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         if self.__database_connection is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a database service first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         if self.__pum_config is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("No valid module available."), None, self
-            ).exec_()
+            ).exec()
             return
 
         srid_string = self.db_parameters_CRS_lineEdit.text()
@@ -662,7 +662,7 @@ class MainDialog(QDialog, DIALOG_UI):
         if srid_string == "":
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please provide a valid SRID."), None, self
-            ).exec_()
+            ).exec()
             return
 
         srid = int(srid_string)
@@ -680,33 +680,33 @@ class MainDialog(QDialog, DIALOG_UI):
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't install/upgrade module:"), exception, self
-            ).exec_()
+            ).exec()
             return
 
     def __upgradeModuleClicked(self):
         if self.__current_module is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a module first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         current_module_version = self.module_version_comboBox.currentData()
         if current_module_version is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a module version first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         if self.__database_connection is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Please select a database service first."), None, self
-            ).exec_()
+            ).exec()
             return
 
         if self.__pum_config is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("No valid module available."), None, self
-            ).exec_()
+            ).exec()
             return
 
         raise NotImplementedError("Upgrade module is not implemented yet")
@@ -716,7 +716,7 @@ class MainDialog(QDialog, DIALOG_UI):
         if self.__pum_config is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("No valid module available."), None, self
-            ).exec_()
+            ).exec()
             return
 
         raise NotImplementedError("Create and grant roles is not implemented yet")
@@ -752,7 +752,7 @@ class MainDialog(QDialog, DIALOG_UI):
         if package_dir is None:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("No valid package directory available."), None, self
-            ).exec_()
+            ).exec()
             return
 
         # Search for QGIS project file in package_dir
@@ -765,7 +765,7 @@ class MainDialog(QDialog, DIALOG_UI):
                 self.tr(f"Project directory '{project_file_dir}' does not exist."),
                 None,
                 self,
-            ).exec_()
+            ).exec()
             return
 
         self.__project_file = None
@@ -785,7 +785,7 @@ class MainDialog(QDialog, DIALOG_UI):
                 self.tr(f"No QGIS project file (.qgz or .qgs) found into {project_file_dir}."),
                 None,
                 self,
-            ).exec_()
+            ).exec()
             return
 
         install_destination = QFileDialog.getExistingDirectory(
