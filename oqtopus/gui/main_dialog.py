@@ -171,15 +171,12 @@ class MainDialog(QDialog, DIALOG_UI):
 
         actionCreateDb = QAction(self.tr("Create database"), db_operations_menu)
         self.__actionDuplicateDb = QAction(self.tr("Duplicate database"), db_operations_menu)
-        actionCreateAndGrantRoles = QAction(self.tr("Create and grant roles"), db_operations_menu)
 
         actionCreateDb.triggered.connect(self.__createDatabaseClicked)
         self.__actionDuplicateDb.triggered.connect(self.__duplicateDatabaseClicked)
-        actionCreateAndGrantRoles.triggered.connect(self.__createAndGrantRolesClicked)
 
         db_operations_menu.addAction(actionCreateDb)
         db_operations_menu.addAction(self.__actionDuplicateDb)
-        db_operations_menu.addAction(actionCreateAndGrantRoles)
 
         self.db_operations_toolButton.setMenu(db_operations_menu)
 
@@ -681,10 +678,14 @@ class MainDialog(QDialog, DIALOG_UI):
                 parameters={"SRID": srid},
             )
             with OverrideCursor(Qt.CursorShape.WaitCursor):
-                upgrader.install()
+                upgrader.install(
+                    roles=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
+                    grant=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
+                    demo_data=self.db_parameters_DemoData_checkBox.isChecked(),
+                )
         except Exception as exception:
             CriticalMessageBox(
-                self.tr("Error"), self.tr("Can't install/upgrade module:"), exception, self
+                self.tr("Error"), self.tr("Can't install the module:"), exception, self
             ).exec()
             return
 
@@ -715,16 +716,6 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         raise NotImplementedError("Upgrade module is not implemented yet")
-
-    def __createAndGrantRolesClicked(self):
-
-        if self.__pum_config is None:
-            CriticalMessageBox(
-                self.tr("Error"), self.tr("No valid module available."), None, self
-            ).exec()
-            return
-
-        raise NotImplementedError("Create and grant roles is not implemented yet")
 
     def __projectInstallClicked(self):
 

@@ -593,6 +593,23 @@
                   </property>
                  </widget>
                 </item>
+                <item row="1" column="0" colspan="2">
+                 <widget class="QCheckBox" name="db_parameters_CreateAndGrantRoles_checkBox">
+                  <property name="text">
+                   <string>Create and grant roles</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="2">
+                 <widget class="QCheckBox" name="checkBox">
+                  <property name="text">
+                   <string>Install demo data</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
