@@ -1,6 +1,6 @@
-import os
 import sys
 import types
+from pathlib import Path
 
 import yaml
 
@@ -46,11 +46,11 @@ def main():
 
     PluginUtils.init_logger()
 
-    conf_path = os.path.join(os.path.dirname(__file__), "oqtopus/default_config.conf")
+    conf_path = Path(__file__).parent / "oqtopus/default_config.yaml"
 
-    with open(conf_path, "rb") as f:
+    with conf_path.open() as f:
         data = yaml.safe_load(f)
-    modules_config = ModulesConfig(**data)
+        modules_config = ModulesConfig(**data)
 
     dialog = MainDialog(modules_config)
     dialog.setWindowIcon(icon)
