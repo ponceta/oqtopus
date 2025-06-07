@@ -16,7 +16,9 @@
  ***************************************************************************/
 """
 
-from qgis.PyQt.QtWidgets import QApplication
+import traceback
+
+from qgis.PyQt.QtWidgets import QApplication, QMessageBox
 
 
 class OverrideCursor:
@@ -65,3 +67,22 @@ class QtUtils:
         font = widget.font()
         font.setItalic(italic)
         widget.setFont(font)
+
+
+class CriticalMessageBox(QMessageBox):
+    def __init__(self, title: str, description: str, exception: Exception = None, parent=None):
+        super().__init__(parent)
+        self.setIcon(QMessageBox.Critical)
+        self.setWindowTitle(title)
+        message = description
+        if exception is not None:
+            message += f"\n{str(exception)}"
+            details = "".join(
+                traceback.format_exception(type(exception), exception, exception.__traceback__)
+            )
+            self.setDetailedText(details)
+        self.setText(message)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.resize(700, 400)  # Set your preferred initial size here

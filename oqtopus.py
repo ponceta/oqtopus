@@ -44,6 +44,7 @@ def main():
     dialog = MainDialog(modules_config)
     dialog.setWindowIcon(icon)
     dialog.show()
+
     sys.exit(app.exec_())
 
 

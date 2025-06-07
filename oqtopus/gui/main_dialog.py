@@ -25,7 +25,6 @@
 import logging
 import os
 import shutil
-import traceback
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
@@ -49,7 +48,7 @@ from ..libs.pum.config import PumConfig
 from ..libs.pum.schema_migrations import SchemaMigrations
 from ..libs.pum.upgrader import Upgrader
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
-from ..utils.qt_utils import OverrideCursor, QtUtils
+from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
 
@@ -213,11 +212,9 @@ class MainDialog(QDialog, DIALOG_UI):
             for service_name in pgserviceparser.service_names():
                 self.db_services_comboBox.addItem(service_name)
         except Exception as exception:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr(f"Can't load database services:\n{exception}"),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't load database services:"), exception, self
+            ).exec_()
             return
 
     def __moduleChanged(self, index):
@@ -232,9 +229,6 @@ class MainDialog(QDialog, DIALOG_UI):
 
         if self.__current_module is None:
             return
-
-        logger.info(f"Loading versions for module '{self.__current_module.name}'...")
-        QApplication.processEvents()
 
         try:
             with OverrideCursor(Qt.WaitCursor):
@@ -252,15 +246,9 @@ class MainDialog(QDialog, DIALOG_UI):
                     )
 
         except Exception as exception:
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle(self.tr("Error"))
-            msg_box.setText(self.tr(f"Can't load module versions:\n{exception}"))
-            details = "".join(
-                traceback.format_exception(type(exception), exception, exception.__traceback__)
-            )
-            msg_box.setDetailedText(details)
-            msg_box.exec_()
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't load module versions:"), exception, self
+            ).exec_()
             return
 
         self.module_version_comboBox.insertSeparator(self.module_version_comboBox.count())
@@ -278,6 +266,8 @@ class MainDialog(QDialog, DIALOG_UI):
         self.module_version_comboBox.addItem(
             self.tr("Load additional branches"), self.MODULE_VERSION_SPECIAL_LOAD_DEVELOPMENT
         )
+
+        logger.info(f"Versions loaded for module '{self.__current_module.name}'.")
 
     def __moduleVersionChanged(self, index):
 
@@ -303,11 +293,15 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__project_file = None
 
         loading_text = self.tr(
-            f"Loading package for module '{self.module_module_comboBox.currentText()}' version '{current_module_version.display_name()}'..."
+            f"Loading packages for module '{self.module_module_comboBox.currentText()}' version '{current_module_version.display_name()}'..."
         )
         self.module_information_label.setText(loading_text)
         QtUtils.resetForegroundColor(self.module_information_label)
         logger.info(loading_text)
+
+        self.module_informationDemodatal_label.setText("-")
+        self.module_informationProject_label.setText("-")
+        self.module_informationPlugin_label.setText("-")
 
         if self.__packagePrepareTask.isRunning():
             self.__packagePrepareTask.cancel()
@@ -349,11 +343,9 @@ class MainDialog(QDialog, DIALOG_UI):
             with OverrideCursor(Qt.WaitCursor):
                 self.__loadModuleFromZip(filename)
         except Exception as exception:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr(f"Can't load module from zip file:\n{exception}"),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't load module from zip file:"), exception, self
+            ).exec_()
             return
 
     def __loadModuleFromZip(self, filename):
@@ -372,21 +364,10 @@ class MainDialog(QDialog, DIALOG_UI):
         logger.info("Load package task finished")
 
         if self.__packagePrepareTask.lastError is not None:
-            error_text = f"Can't load module package:\n{self.__packagePrepareTask.lastError}"
-            # Get the stack trace as a string
-            details = "".join(
-                traceback.format_exception(
-                    type(self.__packagePrepareTask.lastError),
-                    self.__packagePrepareTask.lastError,
-                    self.__packagePrepareTask.lastError.__traceback__,
-                )
-            )
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle(self.tr("Error"))
-            msg_box.setText(self.tr(error_text))
-            msg_box.setDetailedText(details)
-            msg_box.exec_()
+            error_text = self.tr("Can't load module package:")
+            CriticalMessageBox(
+                self.tr("Error"), error_text, self.__packagePrepareTask.lastError, self
+            ).exec_()
             self.module_information_label.setText(error_text)
             QtUtils.setForegroundColor(self.module_information_label, self.COLOR_WARNING)
             return
@@ -396,8 +377,25 @@ class MainDialog(QDialog, DIALOG_UI):
         self.module_information_label.setText(package_dir)
         QtUtils.resetForegroundColor(self.module_information_label)
 
-        self.__packagePrepareGetPUMConfig()
+        asset_datamodel = self.module_version_comboBox.currentData().asset_datamodel
+        if asset_datamodel:
+            self.module_informationDemodata_label.setText(asset_datamodel.package_dir)
+        else:
+            self.module_informationDemodata_label.setText("No asset available")
 
+        asset_project = self.module_version_comboBox.currentData().asset_project
+        if asset_project:
+            self.module_informationProject_label.setText(asset_project.package_dir)
+        else:
+            self.module_informationProject_label.setText("No asset available")
+
+        asset_plugin = self.module_version_comboBox.currentData().asset_plugin
+        if asset_plugin:
+            self.module_informationPlugin_label.setText(asset_plugin.package_dir)
+        else:
+            self.module_informationPlugin_label.setText("No asset available")
+
+        self.__packagePrepareGetPUMConfig()
         self.__packagePrepareGetProjectFilename()
 
     def __packagePrepareGetPUMConfig(self):
@@ -405,16 +403,28 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__data_model_dir = os.path.join(package_dir, "datamodel")
         pumConfigFilename = os.path.join(self.__data_model_dir, ".pum.yaml")
         if not os.path.exists(pumConfigFilename):
-            QMessageBox.critical(
-                self,
+            CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(
                     f"The selected file '{self.__packagePrepareTask.zip_file}' does not contain a valid .pum.yaml file."
                 ),
-            )
+                None,
+                self,
+            ).exec_()
             return
 
-        self.__pum_config = PumConfig.from_yaml(pumConfigFilename)
+        try:
+            self.__pum_config = PumConfig.from_yaml(pumConfigFilename)
+        except Exception as exception:
+            CriticalMessageBox(
+                self.tr("Error"),
+                self.tr(f"Can't load PUM config from '{pumConfigFilename}':"),
+                exception,
+                self,
+            ).exec_()
+            return
+
+        logger.info(f"PUM config loaded from '{pumConfigFilename}'")
 
         for parameter in self.__pum_config.parameters():
             parameter_name = parameter.get("name", None)
@@ -445,9 +455,18 @@ class MainDialog(QDialog, DIALOG_UI):
             )
 
     def __packagePrepareGetProjectFilename(self):
+
+        asset_project = self.module_version_comboBox.currentData().asset_project
+        if asset_project is None:
+            self.project_info_label.setText(
+                self.tr("No project asset available for this module version.")
+            )
+            QtUtils.setForegroundColor(self.project_info_label, self.COLOR_WARNING)
+            QtUtils.setFontItalic(self.db_database_label, True)
+            return
+
         # Search for QGIS project file in self.__package_dir
-        package_dir = self.module_version_comboBox.currentData().asset_project.package_dir
-        project_file_dir = os.path.join(package_dir, "project")
+        project_file_dir = os.path.join(asset_project.package_dir, "project")
 
         # Check if the directory exists
         if not os.path.exists(project_file_dir):
@@ -587,36 +606,28 @@ class MainDialog(QDialog, DIALOG_UI):
     def __installModuleClicked(self):
 
         if self.__current_module is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a module first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module first."), None, self
+            ).exec_()
             return
 
         current_module_version = self.module_version_comboBox.currentData()
         if current_module_version is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a module version first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module version first."), None, self
+            ).exec_()
             return
 
         if self.__database_connection is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a database service first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a database service first."), None, self
+            ).exec_()
             return
 
         if self.__pum_config is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("No valid module available."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("No valid module available."), None, self
+            ).exec_()
             return
 
         srid_string = self.db_parameters_CRS_lineEdit.text()
@@ -624,11 +635,9 @@ class MainDialog(QDialog, DIALOG_UI):
             srid_string = self.db_parameters_CRS_lineEdit.placeholderText()
 
         if srid_string == "":
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please provide a valid SRID."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please provide a valid SRID."), None, self
+            ).exec_()
             return
 
         srid = int(srid_string)
@@ -644,45 +653,35 @@ class MainDialog(QDialog, DIALOG_UI):
             with OverrideCursor(Qt.WaitCursor):
                 upgrader.install()
         except Exception as exception:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr(f"Can't install/upgrade module:\n{exception}"),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't install/upgrade module:"), exception, self
+            ).exec_()
             return
 
     def __upgradeModuleClicked(self):
         if self.__current_module is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a module first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module first."), None, self
+            ).exec_()
             return
 
         current_module_version = self.module_version_comboBox.currentData()
         if current_module_version is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a module version first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module version first."), None, self
+            ).exec_()
             return
 
         if self.__database_connection is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Please select a database service first."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a database service first."), None, self
+            ).exec_()
             return
 
         if self.__pum_config is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("No valid module available."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("No valid module available."), None, self
+            ).exec_()
             return
 
         raise NotImplementedError("Upgrade module is not implemented yet")
@@ -690,11 +689,9 @@ class MainDialog(QDialog, DIALOG_UI):
     def __createAndGrantRolesClicked(self):
 
         if self.__pum_config is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("No valid module available."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("No valid module available."), None, self
+            ).exec_()
             return
 
         raise NotImplementedError("Create and grant roles is not implemented yet")
@@ -728,11 +725,9 @@ class MainDialog(QDialog, DIALOG_UI):
 
         package_dir = asset_project.package_dir
         if package_dir is None:
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("No valid package directory available."),
-            )
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("No valid package directory available."), None, self
+            ).exec_()
             return
 
         # Search for QGIS project file in package_dir
@@ -740,11 +735,12 @@ class MainDialog(QDialog, DIALOG_UI):
 
         # Check if the directory exists
         if not os.path.exists(project_file_dir):
-            QMessageBox.critical(
-                self,
+            CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(f"Project directory '{project_file_dir}' does not exist."),
-            )
+                None,
+                self,
+            ).exec_()
             return
 
         self.__project_file = None
@@ -759,11 +755,12 @@ class MainDialog(QDialog, DIALOG_UI):
                 break
 
         if self.__project_file is None:
-            QMessageBox.critical(
-                self,
+            CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(f"No QGIS project file (.qgz or .qgs) found into {project_file_dir}."),
-            )
+                None,
+                self,
+            ).exec_()
             return
 
         install_destination = QFileDialog.getExistingDirectory(
