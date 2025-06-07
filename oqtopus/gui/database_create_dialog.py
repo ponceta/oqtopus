@@ -22,7 +22,9 @@
 #
 # ---------------------------------------------------------------------
 
-import pgserviceparser
+from pgserviceparser import service_config as pgserviceparser_service_config
+from pgserviceparser import service_names as pgserviceparser_service_names
+from pgserviceparser import service_names as pgserviceparser_write_service
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
@@ -37,7 +39,7 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
         self.setupUi(self)
 
         self.existingService_comboBox.clear()
-        for service_name in pgserviceparser.service_names():
+        for service_name in pgserviceparser_service_names():
             self.existingService_comboBox.addItem(service_name)
 
         if selected_service:
@@ -71,7 +73,7 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
 
     def _serviceChanged(self):
         service_name = self.existingService_comboBox.currentText()
-        service_config = pgserviceparser.service_config(service_name)
+        service_config = pgserviceparser_service_config(service_name)
 
         service_host = service_config.get("host", None)
         service_port = service_config.get("port", None)
@@ -104,7 +106,7 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
             return
 
         # Check if the service name is already in use
-        if service_name in pgserviceparser.service_names():
+        if service_name in pgserviceparser_service_names():
             QMessageBox.critical(
                 self, "Error", self.tr(f"Service name '{service_name}' already exists.")
             )
@@ -116,7 +118,7 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
 
         service_settings = self._get_service_settings()
 
-        pgserviceparser.write_service(
+        pgserviceparser_write_service(
             service_name=service_name,
             settings=service_settings,
             create_if_not_found=True,

@@ -22,7 +22,7 @@
 #
 # ---------------------------------------------------------------------
 
-import pgserviceparser  # noqa: E402
+from pgserviceparser import service_config as pgserviceparser_service_config
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
 from ..utils.plugin_utils import PluginUtils
@@ -37,7 +37,7 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
 
         self.existingService_label.setText(selected_service)
 
-        self.__existing_service_config = pgserviceparser.service_config(selected_service)
+        self.__existing_service_config = pgserviceparser_service_config(selected_service)
         self.existingDatabase_label.setText(self.__existing_service_config.get("dbname", ""))
 
         self.buttonBox.accepted.connect(self._accept)

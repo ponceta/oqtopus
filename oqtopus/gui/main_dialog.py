@@ -48,18 +48,23 @@ from ..core.package_prepare_task import PackagePrepareTask
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
 from .about_dialog import AboutDialog
-from .database_create_dialog import DatabaseCreateDialog
-from .database_duplicate_dialog import DatabaseDuplicateDialog
 from .settings_dialog import SettingsDialog
 
 libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
 if libs_path not in sys.path:
     sys.path.insert(0, libs_path)
 
-import pgserviceparser  # noqa: E402
+from pgserviceparser import conf_path as pgserviceparser_conf_path  # noqa: E402
+from pgserviceparser import (  # noqa: E402
+    service_config as pgserviceparser_service_config,
+)
+from pgserviceparser import service_names as pgserviceparser_service_names  # noqa: E402
 from pum.pum_config import PumConfig  # noqa: E402
 from pum.schema_migrations import SchemaMigrations  # noqa: E402
 from pum.upgrader import Upgrader  # noqa: E402
+
+from .database_create_dialog import DatabaseCreateDialog  # noqa: E402
+from .database_duplicate_dialog import DatabaseDuplicateDialog  # noqa: E402
 
 DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 
@@ -229,12 +234,12 @@ class MainDialog(QDialog, DIALOG_UI):
         QDesktopServices.openUrl(QUrl(help_page))
 
     def __loadDatabaseInformations(self):
-        self.db_servicesConfigFilePath_label.setText(pgserviceparser.conf_path().as_posix())
+        self.db_servicesConfigFilePath_label.setText(pgserviceparser_conf_path().as_posix())
 
         self.db_services_comboBox.clear()
 
         try:
-            for service_name in pgserviceparser.service_names():
+            for service_name in pgserviceparser_service_names():
                 self.db_services_comboBox.addItem(service_name)
         except Exception as exception:
             CriticalMessageBox(
@@ -572,7 +577,7 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         service_name = self.db_services_comboBox.currentText()
-        service_config = pgserviceparser.service_config(service_name)
+        service_config = pgserviceparser_service_config(service_name)
 
         service_database = service_config.get("dbname", None)
 
