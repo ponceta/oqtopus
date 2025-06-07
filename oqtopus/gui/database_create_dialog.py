@@ -22,10 +22,10 @@
 #
 # ---------------------------------------------------------------------
 
+import pgserviceparser
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
-from ..libs import pgserviceparser
 from ..utils.plugin_utils import PluginUtils
 
 DIALOG_UI = PluginUtils.get_ui_class("database_create_dialog.ui")

@@ -45,7 +45,6 @@ from qgis.PyQt.QtWidgets import (
 from ..core.module import Module
 from ..core.module_version import ModuleVersion
 from ..core.package_prepare_task import PackagePrepareTask
-from ..libs import pgserviceparser
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
 from .about_dialog import AboutDialog
@@ -57,6 +56,7 @@ libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"
 if libs_path not in sys.path:
     sys.path.insert(0, libs_path)
 
+import pgserviceparser  # noqa: E402
 from pum.pum_config import PumConfig  # noqa: E402
 from pum.schema_migrations import SchemaMigrations  # noqa: E402
 from pum.upgrader import Upgrader  # noqa: E402
