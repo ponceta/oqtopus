@@ -22,9 +22,11 @@
 #
 # ---------------------------------------------------------------------
 
+
 import logging
 import os
 import shutil
+import sys
 
 import psycopg
 from qgis.PyQt.QtCore import Qt, QUrl
@@ -44,15 +46,20 @@ from ..core.module import Module
 from ..core.module_version import ModuleVersion
 from ..core.package_prepare_task import PackagePrepareTask
 from ..libs import pgserviceparser
-from ..libs.pum.pum_config import PumConfig
-from ..libs.pum.schema_migrations import SchemaMigrations
-from ..libs.pum.upgrader import Upgrader
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
 from .about_dialog import AboutDialog
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
 from .settings_dialog import SettingsDialog
+
+libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
+if libs_path not in sys.path:
+    sys.path.insert(0, libs_path)
+
+from pum.pum_config import PumConfig  # noqa: E402
+from pum.schema_migrations import SchemaMigrations  # noqa: E402
+from pum.upgrader import Upgrader  # noqa: E402
 
 DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 

@@ -63,6 +63,10 @@ class ModuleVersion:
     def __parse_release(self, json_payload: dict):
         if self.name is None:
             self.name = json_payload["name"]
+
+        if self.name is None or self.name == "":
+            self.name = json_payload["tag_name"]
+
         self.branch = self.name
         self.created_at = QDateTime.fromString(json_payload["created_at"], Qt.DateFormat.ISODate)
         self.prerelease = json_payload["prerelease"]
