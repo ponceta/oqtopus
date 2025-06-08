@@ -34,9 +34,9 @@ sys.modules["qgis.PyQt.uic"] = pyqt_uic
 
 from qgis.PyQt.QtGui import QIcon  # noqa: E402
 
-from oqtopus.core.modules_config import ModulesConfig  # noqa: E402
-from oqtopus.gui.main_dialog import MainDialog  # noqa: E402
-from oqtopus.utils.plugin_utils import PluginUtils  # noqa: E402
+from .core.modules_config import ModulesConfig  # noqa: E402
+from .gui.main_dialog import MainDialog  # noqa: E402
+from .utils.plugin_utils import PluginUtils  # noqa: E402
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
 
     PluginUtils.init_logger()
 
-    conf_path = Path(__file__).parent / "oqtopus/default_config.yaml"
+    conf_path = Path(__file__).parent / "default_config.yaml"
 
     with conf_path.open() as f:
         data = yaml.safe_load(f)
