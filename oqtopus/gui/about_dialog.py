@@ -27,7 +27,7 @@ from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtGui import QPixmap
 from qgis.PyQt.QtWidgets import QDialog
 
-from oqtopus.utils.plugin_utils import PluginUtils
+from ..utils.plugin_utils import PluginUtils
 
 DIALOG_UI = PluginUtils.get_ui_class("about_dialog.ui")
 
