@@ -460,7 +460,10 @@ class MainDialog(QDialog, DIALOG_UI):
 
         sm = SchemaMigrations(self.__pum_config)
         migrationVersion = "0.0.0"
-        if sm.exists(self.__database_connection):
+        if not self.__database_connection:
+            self.db_moduleInfo_label.setText(self.tr("No database connection available"))
+            QtUtils.setForegroundColor(self.db_moduleInfo_label, self.COLOR_WARNING)
+        elif sm.exists(self.__database_connection):
             baseline_version = sm.baseline(self.__database_connection)
             self.db_moduleInfo_label.setText(self.tr(f"Version {baseline_version} found"))
             self.db_upgrade_pushButton.setText(self.tr(f"Upgrade to {migrationVersion}"))
