@@ -2,4 +2,6 @@
 
 ![logo](oqtopus/icons/oqtopus-logo.png)
 
-This is the management tool for every [PUM](https://github.com/opengisch/pum/) based module installation and upgrade
+Front-end application to manage [PUM](https://github.com/opengisch/pum) modules.
+
+Read the docs: https://opengisch.github.io/oqtopus/
