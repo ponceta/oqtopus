@@ -693,6 +693,17 @@ class MainDialog(QDialog, DIALOG_UI):
             ).exec()
             return
 
+        QMessageBox.information(
+            self,
+            self.tr("Module installed"),
+            self.tr(
+                f"Module '{self.__current_module.name}' version '{current_module_version.name}' has been successfully installed."
+            ),
+        )
+        logger.info(
+            f"Module '{self.__current_module.name}' version '{current_module_version.name}' has been successfully installed."
+        )
+
     def __upgradeModuleClicked(self):
         if self.__current_module is None:
             CriticalMessageBox(
