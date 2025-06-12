@@ -8,6 +8,10 @@ from qgis.PyQt.QtCore import QThread, pyqtSignal
 from ..utils.plugin_utils import PluginUtils, logger
 
 
+class PackagePrepareTaskCanceled(Exception):
+    pass
+
+
 class PackagePrepareTask(QThread):
     """
     This class is responsible for preparing the package for the Oqtopus module management tool.
@@ -31,7 +35,6 @@ class PackagePrepareTask(QThread):
         self.module_version = None
 
         self.__canceled = False
-        self.lastError = None
         self.start()
 
     def startFromModuleVersion(self, module_version):
@@ -39,7 +42,6 @@ class PackagePrepareTask(QThread):
         self.module_version = module_version
 
         self.__canceled = False
-        self.lastError = None
         self.start()
 
     def cancel(self):
@@ -55,6 +57,7 @@ class PackagePrepareTask(QThread):
                 raise Exception(self.tr("No module version provided."))
 
             self.__download_module_assets(self.module_version)
+            self.lastError = None
 
         except Exception as e:
             # Handle any exceptions that occur during processing
@@ -153,4 +156,4 @@ class PackagePrepareTask(QThread):
         Check if the task has been canceled.
         """
         if self.__canceled:
-            raise Exception(self.tr("The task has been canceled."))
+            raise PackagePrepareTaskCanceled(self.tr("The task has been canceled."))

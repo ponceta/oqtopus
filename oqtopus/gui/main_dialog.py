@@ -44,7 +44,7 @@ from qgis.PyQt.QtWidgets import (
 
 from ..core.module import Module
 from ..core.module_version import ModuleVersion
-from ..core.package_prepare_task import PackagePrepareTask
+from ..core.package_prepare_task import PackagePrepareTask, PackagePrepareTaskCanceled
 from ..utils.plugin_utils import LoggingBridge, PluginUtils, logger
 from ..utils.qt_utils import CriticalMessageBox, OverrideCursor, QtUtils
 from .about_dialog import AboutDialog
@@ -314,6 +314,11 @@ class MainDialog(QDialog, DIALOG_UI):
             self.__loadDevelopmentVersions()
             return
 
+        if self.__packagePrepareTask.isRunning():
+            logger.info("Package prepare task is running, canceling it.")
+            self.__packagePrepareTask.cancel()
+            self.__packagePrepareTask.wait()
+
         current_module_version = self.module_version_comboBox.currentData()
         if current_module_version is None:
             return
@@ -338,10 +343,6 @@ class MainDialog(QDialog, DIALOG_UI):
         self.module_informationDatamodel_label.setText("-")
         self.module_informationProject_label.setText("-")
         self.module_informationPlugin_label.setText("-")
-
-        if self.__packagePrepareTask.isRunning():
-            self.__packagePrepareTask.cancel()
-            self.__packagePrepareTask.wait()
 
         self.__packagePrepareTask.startFromModuleVersion(current_module_version)
 
@@ -398,6 +399,12 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __packagePrepareTaskFinished(self):
         logger.info("Load package task finished")
+
+        if isinstance(self.__packagePrepareTask.lastError, PackagePrepareTaskCanceled):
+            logger.info("Load package task was canceled by user.")
+            self.module_information_label.setText(self.tr("Package loading canceled."))
+            QtUtils.setForegroundColor(self.module_information_label, self.COLOR_WARNING)
+            return
 
         if self.__packagePrepareTask.lastError is not None:
             error_text = self.tr("Can't load module package:")

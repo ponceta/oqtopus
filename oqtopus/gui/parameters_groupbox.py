@@ -17,6 +17,7 @@ class ParameterWidget(QWidget):
     def __init__(self, parameter_definition: ParameterDefinition, parent):
         QWidget.__init__(self, parent)
         self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
         self.value = None
         self.__valueChanged = False
