@@ -669,7 +669,10 @@ class MainDialog(QDialog, DIALOG_UI):
             return
 
         parameters = self.parameters_groupbox.parameters_values()
-        demo_data_name = self.db_parameter_demoData_comboBox.currentData()
+
+        demo_data_name = None
+        if self.db_parameter_demoData_comboBox.currentData() is not None:
+            demo_data_name = self.db_parameter_demoData_comboBox.currentText()
 
         try:
             self.db_services_comboBox.currentText()
