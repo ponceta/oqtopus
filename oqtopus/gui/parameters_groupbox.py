@@ -89,8 +89,8 @@ class ParametersGroupBox(QGroupBox):
         for parameter in self.parameters:
             if self.parameter_widgets[parameter.name].valueSet():
                 values[parameter.name] = self.parameter_widgets[parameter.name].value()
-            else:
-                values[parameter.name] = parameter.default.value
+            # else:
+            #     values[parameter.name] = parameter.default
         return values
 
     def clean(self):
