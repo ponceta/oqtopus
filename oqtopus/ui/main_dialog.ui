@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_8" rowstretch="0,0,0,0,4,0">
    <item row="1" column="2" rowspan="2">
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="plugin_groupBox">
      <property name="title">
       <string>Plugin</string>
      </property>
@@ -173,7 +173,7 @@
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="project_groupBox">
      <property name="title">
       <string>Project</string>
      </property>
@@ -419,7 +419,7 @@
     </spacer>
    </item>
    <item row="2" column="0" rowspan="2">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="db_groupBox">
      <property name="title">
       <string>Database connection</string>
      </property>
@@ -552,7 +552,7 @@
     </widget>
    </item>
    <item row="0" column="1" rowspan="4">
-    <widget class="QGroupBox" name="groupBox_7">
+    <widget class="QGroupBox" name="moduleInfo_groupBox">
      <property name="title">
       <string>Module informations</string>
      </property>
@@ -584,18 +584,22 @@
               </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout">
-               <item>
-                <widget class="QLabel" name="label_20">
-                 <property name="text">
-                  <string>Demo data:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="db_parameter_demoData_comboBox"/>
-               </item>
-              </layout>
+              <widget class="QGroupBox" name="db_demoData_groupBox">
+               <property name="title">
+                <string>Ins&amp;tall demo data</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_12">
+                <item row="0" column="0">
+                 <widget class="QComboBox" name="db_demoData_comboBox"/>
+                </item>
+               </layout>
+              </widget>
              </item>
              <item>
               <widget class="ParametersGroupBox" name="parameters_groupbox">

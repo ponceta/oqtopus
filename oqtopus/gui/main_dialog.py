@@ -346,6 +346,11 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.__packagePrepareTask.startFromModuleVersion(current_module_version)
 
+        self.db_groupBox.setEnabled(False)
+        self.moduleInfo_groupBox.setEnabled(False)
+        self.plugin_groupBox.setEnabled(False)
+        self.project_groupBox.setEnabled(False)
+
     def __loadDevelopmentVersions(self):
         if self.__current_module is None:
             return
@@ -397,8 +402,18 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.__packagePrepareTask.startFromZip(filename)
 
+        self.db_groupBox.setEnabled(False)
+        self.moduleInfo_groupBox.setEnabled(False)
+        self.plugin_groupBox.setEnabled(False)
+        self.project_groupBox.setEnabled(False)
+
     def __packagePrepareTaskFinished(self):
         logger.info("Load package task finished")
+
+        self.db_groupBox.setEnabled(True)
+        self.moduleInfo_groupBox.setEnabled(True)
+        self.plugin_groupBox.setEnabled(True)
+        self.project_groupBox.setEnabled(True)
 
         if isinstance(self.__packagePrepareTask.lastError, PackagePrepareTaskCanceled):
             logger.info("Load package task was canceled by user.")
@@ -471,11 +486,9 @@ class MainDialog(QDialog, DIALOG_UI):
 
         self.parameters_groupbox.setParameters(self.__pum_config.parameters())
 
-        self.db_parameter_demoData_comboBox.clear()
-        self.db_parameter_demoData_comboBox.addItem(self.tr("Don't install demo data"), None)
-
+        self.db_demoData_comboBox.clear()
         for demo_data_name, demo_data_file in self.__pum_config.demo_data().items():
-            self.db_parameter_demoData_comboBox.addItem(demo_data_name, demo_data_file)
+            self.db_demoData_comboBox.addItem(demo_data_name, demo_data_file)
 
         sm = SchemaMigrations(self.__pum_config)
         migrationVersion = "0.0.0"
@@ -678,8 +691,8 @@ class MainDialog(QDialog, DIALOG_UI):
         parameters = self.parameters_groupbox.parameters_values()
 
         demo_data_name = None
-        if self.db_parameter_demoData_comboBox.currentData() is not None:
-            demo_data_name = self.db_parameter_demoData_comboBox.currentText()
+        if self.db_demoData_groupBox.isChecked():
+            demo_data_name = self.db_demoData_comboBox.currentText()
 
         try:
             self.db_services_comboBox.currentText()
