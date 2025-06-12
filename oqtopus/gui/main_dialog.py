@@ -141,6 +141,8 @@ class MainDialog(QDialog, DIALOG_UI):
         logger.info("Ready.")
 
     def __initGuiModules(self):
+        self.module_progressBar.setVisible(False)
+
         self.module_module_comboBox.clear()
         self.module_module_comboBox.addItem(self.tr("Please select a module"), None)
         for config_module in self.__modules_config.modules:
@@ -350,6 +352,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.moduleInfo_groupBox.setEnabled(False)
         self.plugin_groupBox.setEnabled(False)
         self.project_groupBox.setEnabled(False)
+        self.module_progressBar.setVisible(True)
 
     def __loadDevelopmentVersions(self):
         if self.__current_module is None:
@@ -406,6 +409,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.moduleInfo_groupBox.setEnabled(False)
         self.plugin_groupBox.setEnabled(False)
         self.project_groupBox.setEnabled(False)
+        self.module_progressBar.setVisible(True)
 
     def __packagePrepareTaskFinished(self):
         logger.info("Load package task finished")
@@ -414,6 +418,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.moduleInfo_groupBox.setEnabled(True)
         self.plugin_groupBox.setEnabled(True)
         self.project_groupBox.setEnabled(True)
+        self.module_progressBar.setVisible(False)
 
         if isinstance(self.__packagePrepareTask.lastError, PackagePrepareTaskCanceled):
             logger.info("Load package task was canceled by user.")
@@ -851,7 +856,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__seeChangeLogClicked()
 
     def __logsOpenFileClicked(self):
-        QDesktopServices.openUrl(QUrl.fromLocalFile(PluginUtils.plugin_temp_path()))
+        PluginUtils.open_log_file()
 
     def __logsOpenFolderClicked(self):
         PluginUtils.open_logs_folder()
