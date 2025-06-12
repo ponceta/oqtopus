@@ -3,7 +3,6 @@ import logging
 from pum import ParameterDefinition, ParameterType
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
-    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -37,14 +36,12 @@ class ParameterWidget(QWidget):
             self.widget = QLineEdit(self)
             self.widget.setPlaceholderText(parameter_definition.default.as_string())
             self.layout.addWidget(self.widget)
-            self.value = lambda: self.widget.text()
+            self.value = lambda: self.widget.text() or self.widget.placeholderText()
 
 
 class ParametersGroupBox(QGroupBox):
     def __init__(self, parent):
         QGroupBox.__init__(self, parent)
-        self.layout = QGridLayout(self)
-        self.setLayout(self.layout)
         self.parameter_widgets = {}
 
     def setParameters(self, parameters: list[ParameterDefinition]):
@@ -54,7 +51,7 @@ class ParametersGroupBox(QGroupBox):
         # Remove all widgets from the parameters_group_box layout
         for parameter in parameters:
             pw = ParameterWidget(parameter, self)
-            self.layout.addWidget(pw)
+            self.layout().addWidget(pw)
             self.parameter_widgets[parameter.name] = pw
 
     def parameters_values(self):
@@ -64,6 +61,6 @@ class ParametersGroupBox(QGroupBox):
         return values
 
     def clean(self):
-        for widget in self.parameter_widgets:
+        for widget in self.parameter_widgets.values():
             widget.deleteLater()
         self.parameter_widgets = {}
