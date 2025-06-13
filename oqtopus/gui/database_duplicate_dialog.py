@@ -24,9 +24,11 @@
 
 import psycopg
 from pgserviceparser import service_config as pgserviceparser_service_config
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
 from ..utils.plugin_utils import PluginUtils
+from ..utils.qt_utils import OverrideCursor
 
 DIALOG_UI = PluginUtils.get_ui_class("database_duplicate_dialog.ui")
 
@@ -65,11 +67,12 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
         # Duplicate the database
         new_database_name = self.newDatabase_lineEdit.text()
         try:
-            with database_connection.cursor() as cursor:
-                cursor.execute(
-                    f"CREATE DATABASE {new_database_name} TEMPLATE {self.__existing_service_config.get('dbname')}"
-                )
-                database_connection.commit()
+            database_connection.autocommit = True
+            with OverrideCursor(Qt.WaitCursor):
+                with database_connection.cursor() as cursor:
+                    cursor.execute(
+                        f"CREATE DATABASE {new_database_name} TEMPLATE {self.__existing_service_config.get('dbname')}"
+                    )
         except psycopg.Error as e:
             errorText = self.tr(f"Error duplicating database:\n{e}.")
             QMessageBox.critical(self, "Error", errorText)
