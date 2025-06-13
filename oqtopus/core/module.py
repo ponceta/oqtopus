@@ -77,6 +77,7 @@ class Module:
         json_versions = r.json()
         for json_version in json_versions:
             module_package = ModulePackage(
+                module=self,
                 organisation=self.organisation,
                 repository=self.repository,
                 json_payload=json_version,

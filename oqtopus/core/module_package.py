@@ -55,6 +55,7 @@ class ModulePackage:
             f"https://github.com/{organisation}/{repository}/archive/refs/{type}/{self.branch}.zip"
         )
 
+        self.zip_file = None
         self.package_dir = None
 
     def display_name(self):

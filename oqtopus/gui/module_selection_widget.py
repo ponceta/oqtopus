@@ -63,6 +63,13 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
     def getSelectedModulePackage(self):
         return self.__current_module_package
 
+    def lastError(self):
+        """
+        Returns the last error occurred during the loading process.
+        If no error occurred, returns None.
+        """
+        return self.__packagePrepareTask.lastError
+
     def __moduleChanged(self, index):
         if self.module_module_comboBox.currentData() == self.__current_module:
             return
@@ -111,7 +118,7 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
 
         self.module_package_comboBox.insertSeparator(self.module_package_comboBox.count())
         self.module_package_comboBox.addItem(
-            self.tr("Load additional branches"), self.module_package_SPECIAL_LOAD_DEVELOPMENT
+            self.tr("Load development branches"), self.module_package_SPECIAL_LOAD_DEVELOPMENT
         )
 
         logger.info(f"Versions loaded for module '{self.__current_module.name}'.")

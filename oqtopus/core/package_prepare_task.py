@@ -23,7 +23,6 @@ class PackagePrepareTask(QThread):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.zip_file = None
         self.module_package = None
 
         self.__canceled = False
@@ -31,14 +30,12 @@ class PackagePrepareTask(QThread):
 
     def startFromZip(self, zip_file: str):
 
-        self.zip_file = zip_file
         self.module_package = None
 
         self.__canceled = False
         self.start()
 
     def startFromModulePackage(self, module_package):
-        self.zip_file = None
         self.module_package = module_package
 
         self.__canceled = False
@@ -68,6 +65,7 @@ class PackagePrepareTask(QThread):
 
         # Download the source
         zip_file = self.__download_module_asset(module_package.download_url, "source.zip")
+        module_package.zip_file = zip_file
         package_dir = self.__extract_zip_file(zip_file)
         module_package.package_dir = package_dir
 

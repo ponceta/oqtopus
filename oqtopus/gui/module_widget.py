@@ -37,13 +37,25 @@ class ModuleWidget(QWidget, DIALOG_UI):
 
     def __packagePrepareGetPUMConfig(self):
         package_dir = self.__current_module_package.package_dir
+
+        if package_dir is None:
+            CriticalMessageBox(
+                self.tr("Error"),
+                self.tr(
+                    f"The selected file '{self.__current_module_package.zip_file}' does not contain a valid package directory."
+                ),
+                None,
+                self,
+            ).exec()
+            return
+
         self.__data_model_dir = os.path.join(package_dir, "datamodel")
         pumConfigFilename = os.path.join(self.__data_model_dir, ".pum.yaml")
         if not os.path.exists(pumConfigFilename):
             CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(
-                    f"The selected file '{self.__packagePrepareTask.zip_file}' does not contain a valid .pum.yaml file."
+                    f"The selected file '{self.__current_module_package.zip_file}' does not contain a valid .pum.yaml file."
                 ),
                 None,
                 self,

@@ -109,6 +109,10 @@ class MainDialog(QDialog, DIALOG_UI):
             self.__databaseConnectionWidget_connectionChanged
         )
 
+        self.module_groupBox.setEnabled(False)
+        self.plugin_groupBox.setEnabled(False)
+        self.project_groupBox.setEnabled(False)
+
         logger.info("Ready.")
 
     def __closeDialog(self):
@@ -137,9 +141,21 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __moduleSelection_loadingFinished(self):
         self.db_groupBox.setEnabled(True)
+
+        module_package = self.__moduleSelectionWidget.getSelectedModulePackage()
+        if module_package is None:
+            return
+
+        if self.__moduleSelectionWidget.lastError() is not None:
+            return
+
         self.module_groupBox.setEnabled(True)
-        self.plugin_groupBox.setEnabled(True)
-        self.project_groupBox.setEnabled(True)
+
+        if module_package.asset_plugin is not None:
+            self.plugin_groupBox.setEnabled(True)
+
+        if module_package.asset_project is not None:
+            self.project_groupBox.setEnabled(True)
 
         self.__moduleWidget.setModulePackage(
             self.__moduleSelectionWidget.getSelectedModulePackage()
