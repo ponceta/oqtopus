@@ -24,7 +24,7 @@
 
 from pgserviceparser import service_config as pgserviceparser_service_config
 from pgserviceparser import service_names as pgserviceparser_service_names
-from pgserviceparser import service_names as pgserviceparser_write_service
+from pgserviceparser import write_service as pgserviceparser_write_service
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 

@@ -5,9 +5,9 @@ from ..utils.plugin_utils import PluginUtils
 from .module_asset import ModuleAsset
 
 
-class ModuleVersion:
+class ModulePackage:
 
-    # enum for version type
+    # enum for package type
     class Type:
         RELEASE = "release"
         BRANCH = "branch"
@@ -16,6 +16,7 @@ class ModuleVersion:
 
     def __init__(
         self,
+        module,
         organisation,
         repository,
         json_payload: dict,
@@ -23,7 +24,7 @@ class ModuleVersion:
         name=None,
         branch=None,
     ):
-
+        self.module = module
         self.type = type
         self.name = name
         self.branch = branch
@@ -35,19 +36,19 @@ class ModuleVersion:
         self.asset_project = None
         self.asset_plugin = None
 
-        if self.type == ModuleVersion.Type.RELEASE:
+        if self.type == ModulePackage.Type.RELEASE:
             self.__parse_release(json_payload)
-        elif self.type == ModuleVersion.Type.BRANCH:
+        elif self.type == ModulePackage.Type.BRANCH:
             pass
-        elif self.type == ModuleVersion.Type.PULL_REQUEST:
+        elif self.type == ModulePackage.Type.PULL_REQUEST:
             self.__parse_pull_request(json_payload)
-        elif self.type == ModuleVersion.Type.FROM_ZIP:
+        elif self.type == ModulePackage.Type.FROM_ZIP:
             return
         else:
             raise ValueError(f"Unknown type '{type}'")
 
         type = "heads"
-        if self.type == ModuleVersion.Type.RELEASE:
+        if self.type == ModulePackage.Type.RELEASE:
             type = "tags"
 
         self.download_url = (
