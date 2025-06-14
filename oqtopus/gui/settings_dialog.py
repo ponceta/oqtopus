@@ -1,4 +1,4 @@
-from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QStyle
 
 from ..utils.plugin_utils import PluginUtils
 
@@ -11,17 +11,27 @@ class SettingsDialog(QDialog, DIALOG_UI):
         self.setupUi(self)
 
         self.githubToken_lineEdit.setText(PluginUtils.get_github_token())
-        self.githubToken_lineEdit.setToolTip(
+
+        self.helpButton.setIcon(
+            QApplication.style().standardIcon(QStyle.StandardPixmap.SP_DialogHelpButton)
+        )
+        self.helpButton.clicked.connect(self.__show_github_token_help)
+
+    def accept(self):
+        PluginUtils.set_github_token(self.githubToken_lineEdit.text())
+        super().accept()
+
+    def __show_github_token_help(self):
+        QMessageBox.information(
+            self,
+            "GitHub Access Token Help",
             "<b>GitHub Access Token</b><br>"
+            "Oqtopus needs to download release data from GitHub to work properly. "
+            "GitHub limits the number of requests that can be made without authentication. "
             "A personal access token is required to access private repositories or to increase API rate limits.<br><br>"
             "To generate a token:<br>"
             "1. Go to <a href='https://github.com/settings/tokens'>GitHub Personal Access Tokens</a>.<br>"
             "2. Click <b>Generate new token</b>.<br>"
             "3. Select the <code>repo</code> scope for most operations.<br>"
-            "4. Copy and paste the generated token here."
+            "4. Copy and paste the generated token here.",
         )
-        self.githubToken_label.setToolTip(self.githubToken_lineEdit.toolTip())
-
-    def accept(self):
-        PluginUtils.set_github_token(self.githubToken_lineEdit.text())
-        super().accept()

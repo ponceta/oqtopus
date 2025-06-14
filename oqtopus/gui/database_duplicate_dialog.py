@@ -22,10 +22,13 @@
 #
 # ---------------------------------------------------------------------
 
+import psycopg
 from pgserviceparser import service_config as pgserviceparser_service_config
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
 from ..utils.plugin_utils import PluginUtils
+from ..utils.qt_utils import OverrideCursor
 
 DIALOG_UI = PluginUtils.get_ui_class("database_duplicate_dialog.ui")
 
@@ -51,3 +54,47 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
         if self.newService_lineEdit.text() == "":
             QMessageBox.critical(self, "Error", "Please enter a service name.")
             return
+
+        service_name = self.existingService_label.text()
+        try:
+            database_connection = psycopg.connect(service=service_name)
+
+        except Exception as exception:
+            errorText = self.tr(f"Can't connect to service '{service_name}':\n{exception}.")
+            QMessageBox.critical(self, "Error", errorText)
+            return
+
+        # Duplicate the database
+        new_database_name = self.newDatabase_lineEdit.text()
+        try:
+            database_connection.autocommit = True
+            with OverrideCursor(Qt.WaitCursor):
+                with database_connection.cursor() as cursor:
+                    cursor.execute(
+                        f"CREATE DATABASE {new_database_name} TEMPLATE {self.__existing_service_config.get('dbname')}"
+                    )
+        except psycopg.Error as e:
+            errorText = self.tr(f"Error duplicating database:\n{e}.")
+            QMessageBox.critical(self, "Error", errorText)
+            return
+        finally:
+            database_connection.close()
+
+        # Create new service configuration
+        new_service_name = self.newService_lineEdit.text()
+        new_service_config = pgserviceparser_service_config(
+            new_service_name,
+            dbname=new_database_name,
+            host=self.__existing_service_config.get("host", ""),
+            port=self.__existing_service_config.get("port", ""),
+            user=self.__existing_service_config.get("user", ""),
+            password=self.__existing_service_config.get("password", ""),
+        )
+        try:
+            pgserviceparser_service_config.write_service_config(new_service_config)
+        except Exception as e:
+            errorText = self.tr(f"Error writing new service configuration:\n{e}.")
+            QMessageBox.critical(self, "Error", errorText)
+            return
+
+        super().accept()

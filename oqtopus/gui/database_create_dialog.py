@@ -24,7 +24,7 @@
 
 from pgserviceparser import service_config as pgserviceparser_service_config
 from pgserviceparser import service_names as pgserviceparser_service_names
-from pgserviceparser import service_names as pgserviceparser_write_service
+from pgserviceparser import write_service as pgserviceparser_write_service
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
@@ -127,23 +127,28 @@ class DatabaseCreateDialog(QDialog, DIALOG_UI):
         super().accept()
 
     def _get_service_settings(self):
-
         settings = dict()
 
         if self.enterManually_radioButton.isChecked():
             if self.parameters_host_lineEdit.text():
                 settings["host"] = self.parameters_host_lineEdit.text()
-
             if self.parameters_port_lineEdit.text():
                 settings["port"] = self.parameters_port_lineEdit.text()
-
             if self.parameters_ssl_comboBox.currentData():
                 settings["sslmode"] = self.parameters_ssl_comboBox.currentData()
-
             if self.parameters_user_lineEdit.text():
                 settings["user"] = self.parameters_user_lineEdit.text()
-
             if self.parameters_password_lineEdit.text():
                 settings["password"] = self.parameters_password_lineEdit.text()
+            if self.database_lineEdit.text():
+                settings["dbname"] = self.database_lineEdit.text()
+        else:
+            # Copy settings from the selected existing service
+            service_name = self.existingService_comboBox.currentText()
+            existing_settings = pgserviceparser_service_config(service_name)
+            settings.update(existing_settings)
+            # Overwrite dbname with the new database name
+            if self.database_lineEdit.text():
+                settings["dbname"] = self.database_lineEdit.text()
 
         return settings

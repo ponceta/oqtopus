@@ -31,7 +31,7 @@ from qgis.PyQt.QtCore import (
     QUrl,
     pyqtSignal,
 )
-from qgis.PyQt.QtGui import QDesktopServices, QIcon
+from qgis.PyQt.QtGui import QColor, QDesktopServices, QIcon
 from qgis.PyQt.uic import loadUiType
 
 logger = logging.getLogger("oqtopus")
@@ -39,9 +39,12 @@ logger = logging.getLogger("oqtopus")
 
 class PluginUtils:
 
-    PLUGIN_NAME = "oqtopus Module Management Tool (Oqtopus)"
+    PLUGIN_NAME = "Oqtopus"
 
     logsDirectory = ""
+
+    COLOR_GREEN = QColor(12, 167, 137)
+    COLOR_WARNING = QColor(255, 165, 0)
 
     @staticmethod
     def plugin_root_path():
@@ -165,4 +168,5 @@ class LoggingBridge(logging.Handler, QObject):
 
     def emit(self, record):
         log_entry = self.format(record)
+        print(log_entry)
         self.loggedLine.emit(record, log_entry)

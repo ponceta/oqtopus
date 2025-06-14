@@ -8,6 +8,10 @@ from qgis.PyQt.QtCore import QThread, pyqtSignal
 from ..utils.plugin_utils import PluginUtils, logger
 
 
+class PackagePrepareTaskCanceled(Exception):
+    pass
+
+
 class PackagePrepareTask(QThread):
     """
     This class is responsible for preparing the package for the Oqtopus module management tool.
@@ -19,27 +23,22 @@ class PackagePrepareTask(QThread):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.zip_file = None
-        self.module_version = None
+        self.module_package = None
 
         self.__canceled = False
         self.lastError = None
 
     def startFromZip(self, zip_file: str):
 
-        self.zip_file = zip_file
-        self.module_version = None
+        self.module_package = None
 
         self.__canceled = False
-        self.lastError = None
         self.start()
 
-    def startFromModuleVersion(self, module_version):
-        self.zip_file = None
-        self.module_version = module_version
+    def startFromModulePackage(self, module_package):
+        self.module_package = module_package
 
         self.__canceled = False
-        self.lastError = None
         self.start()
 
     def cancel(self):
@@ -51,50 +50,52 @@ class PackagePrepareTask(QThread):
         """
 
         try:
-            if self.module_version is None:
+            if self.module_package is None:
                 raise Exception(self.tr("No module version provided."))
 
-            self.__download_module_assets(self.module_version)
+            self.__download_module_assets(self.module_package)
+            self.lastError = None
 
         except Exception as e:
             # Handle any exceptions that occur during processing
             logger.critical(f"Package prepare task error: {e}")
             self.lastError = e
 
-    def __download_module_assets(self, module_version):
+    def __download_module_assets(self, module_package):
 
         # Download the source
-        zip_file = self.__download_module_asset(module_version.download_url, "source.zip")
+        zip_file = self.__download_module_asset(module_package.download_url, "source.zip")
+        module_package.zip_file = zip_file
         package_dir = self.__extract_zip_file(zip_file)
-        module_version.package_dir = package_dir
+        module_package.package_dir = package_dir
 
         # Download the release assets
         self.__checkForCanceled()
-        if module_version.asset_datamodel is not None:
+        if module_package.asset_datamodel is not None:
             zip_file = self.__download_module_asset(
-                module_version.asset_datamodel.download_url,
-                module_version.asset_datamodel.type.value + ".zip",
+                module_package.asset_datamodel.download_url,
+                module_package.asset_datamodel.type.value + ".zip",
             )
             package_dir = self.__extract_zip_file(zip_file)
-            module_version.asset_datamodel.package_dir = package_dir
+            module_package.asset_datamodel.package_dir = package_dir
 
         self.__checkForCanceled()
-        if module_version.asset_project is not None:
+        if module_package.asset_project is not None:
             zip_file = self.__download_module_asset(
-                module_version.asset_project.download_url,
-                module_version.asset_project.type.value + ".zip",
+                module_package.asset_project.download_url,
+                module_package.asset_project.type.value + ".zip",
             )
             package_dir = self.__extract_zip_file(zip_file)
-            module_version.asset_project.package_dir = package_dir
+            module_package.asset_project.package_dir = package_dir
 
         self.__checkForCanceled()
-        if module_version.asset_plugin is not None:
+        if module_package.asset_plugin is not None:
             zip_file = self.__download_module_asset(
-                module_version.asset_plugin.download_url,
-                module_version.asset_plugin.type.value + ".zip",
+                module_package.asset_plugin.download_url,
+                module_package.asset_plugin.type.value + ".zip",
             )
             package_dir = self.__extract_zip_file(zip_file)
-            module_version.asset_plugin.package_dir = package_dir
+            module_package.asset_plugin.package_dir = package_dir
 
     def __download_module_asset(self, url: str, filename: str):
 
@@ -153,4 +154,4 @@ class PackagePrepareTask(QThread):
         Check if the task has been canceled.
         """
         if self.__canceled:
-            raise Exception(self.tr("The task has been canceled."))
+            raise PackagePrepareTaskCanceled(self.tr("The task has been canceled."))
