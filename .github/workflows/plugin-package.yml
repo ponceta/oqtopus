@@ -38,17 +38,24 @@ jobs:
         run: pip install qgis-plugin-ci>=2.8.6
 
       - name: Package PyPI Packages
-        run: ./scripts/package-pip-packages.sh
+        run: |
+          DNL=$(git grep pgserviceparser requirements.txt | cut -d: -f2)
+          pip download ${DNL} --only-binary :all: -d temp/
+          unzip -o "temp/*.whl" -d oqtopus/libs
+          rm -r temp
+          # set write rights to group (because qgis-plugin-ci needs it)
+          chmod -R g+w oqtopus/libs
+
 
       - name: Package
         run: |
           VERSION=0.0.0
           qgis-plugin-ci -v package ${VERSION} \
             --allow-uncommitted-changes \
-            --asset-path plugin/teksi_module_management_tool/libs \
+            --asset-path oqtopus/libs \
 
       - uses: actions/upload-artifact@v4
         with:
-          name: teksi_module_management_tool_dev
-          path: plugin/teksi_module_management_tool.0.0.0.zip
+          name: oqtopus_dev
+          path: oqtopus.0.0.0.zip
           if-no-files-found: error
