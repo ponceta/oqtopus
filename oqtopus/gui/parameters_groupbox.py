@@ -90,8 +90,15 @@ class ParametersGroupBox(QGroupBox):
         for parameter in self.parameters:
             if self.parameter_widgets[parameter.name].valueSet():
                 values[parameter.name] = self.parameter_widgets[parameter.name].value()
-            # else:
-            #     values[parameter.name] = parameter.default
+            else:
+                if parameter.type == ParameterType.BOOLEAN:
+                    values[parameter.name] = bool(parameter.default.as_string())
+                elif parameter.type == ParameterType.INTEGER:
+                    values[parameter.name] = int(parameter.default.as_string())
+                elif parameter.type == ParameterType.DECIMAL:
+                    values[parameter.name] = float(parameter.default.as_string())
+                # else:
+                #     values[parameter.name] = parameter.default
         return values
 
     def clean(self):
