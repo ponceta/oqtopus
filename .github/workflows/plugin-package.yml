@@ -39,7 +39,7 @@ jobs:
 
       - name: Package PyPI Packages
         run: |
-          for LIB in ("pgserviceparser" "pum"); do
+          for LIB in pgserviceparser pum; do
             DNL=$(git grep $LIB requirements.txt | cut -d: -f2)
             pip download $DNL --only-binary :all: -d temp/
           done
