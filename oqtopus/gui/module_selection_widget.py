@@ -99,9 +99,28 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
                     )
 
         except Exception as exception:
-            CriticalMessageBox(
-                self.tr("Error"), self.tr("Can't load module versions:"), exception, self
-            ).exec()
+            error_message = str(exception)
+            if "rate limit exceeded for url" in error_message.lower():
+                CriticalMessageBox(
+                    self.tr("GitHub API Rate Limit Exceeded"),
+                    self.tr(
+                        "Oqtopus needs to download release data from GitHub to work properly.<br><br>"
+                        "GitHub limits the number of requests that can be made without authentication. "
+                        "You have reached the maximum number of requests allowed for unauthenticated users.<br><br>"
+                        "To continue using this feature, please create a free GitHub personal access token and enter it in the Settings dialog.<br><br>"
+                        "This will increase your request limit.<br><br>"
+                        "<b>How to get a token:</b><br>"
+                        "1. Go to <a href='https://github.com/settings/tokens'>GitHub Personal Access Tokens</a>.<br>"
+                        "2. Click <b>Generate new token</b> and select the <code>repo</code> scope.<br>"
+                        "3. Copy the generated token and paste it in the Settings dialog of this application."
+                    ),
+                    exception,
+                    self,
+                ).exec()
+            else:
+                CriticalMessageBox(
+                    self.tr("Error"), self.tr("Can't load module versions:"), exception, self
+                ).exec()
             return
 
         self.module_package_comboBox.insertSeparator(self.module_package_comboBox.count())
