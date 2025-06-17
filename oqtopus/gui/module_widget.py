@@ -129,10 +129,6 @@ class ModuleWidget(QWidget, DIALOG_UI):
 
         parameters = self.parameters_groupbox.parameters_values()
 
-        demo_data_name = None
-        if self.db_demoData_checkBox.isChecked():
-            demo_data_name = self.db_demoData_comboBox.currentText()
-
         try:
             upgrader = Upgrader(
                 config=self.__pum_config,
@@ -143,8 +139,15 @@ class ModuleWidget(QWidget, DIALOG_UI):
                     connection=self.__database_connection,
                     roles=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
                     grant=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
-                    demo_data=demo_data_name,
                 )
+
+                if self.db_demoData_checkBox.isChecked():
+                    demo_data_name = self.db_demoData_comboBox.currentText()
+                    upgrader.install_demo_data(
+                        connection=self.__database_connection,
+                        name=demo_data_name,
+                        parameters=parameters,
+                    )
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't install the module:"), exception, self
