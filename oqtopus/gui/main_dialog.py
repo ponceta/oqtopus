@@ -69,11 +69,11 @@ class MainDialog(QDialog, DIALOG_UI):
 
         # Init GUI Module Info
         self.__moduleWidget = ModuleWidget(self)
-        self.module_groupBox.layout().addWidget(self.__moduleWidget)
+        self.module_tab.layout().addWidget(self.__moduleWidget)
 
         # Init GUI Project
         self.__projectWidget = ProjectWidget(self)
-        self.project_groupBox.layout().addWidget(self.__projectWidget)
+        self.project_tab.layout().addWidget(self.__projectWidget)
 
         # Init GUI Logs
         self.__logsWidget = LogsWidget(self)
@@ -109,9 +109,9 @@ class MainDialog(QDialog, DIALOG_UI):
             self.__databaseConnectionWidget_connectionChanged
         )
 
-        self.module_groupBox.setEnabled(False)
-        self.plugin_groupBox.setEnabled(False)
-        self.project_groupBox.setEnabled(False)
+        self.module_tab.setEnabled(False)
+        self.plugin_tab.setEnabled(False)
+        self.project_tab.setEnabled(False)
 
         logger.info("Ready.")
 
@@ -135,9 +135,9 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __moduleSelection_loadingStarted(self):
         self.db_groupBox.setEnabled(False)
-        self.module_groupBox.setEnabled(False)
-        self.plugin_groupBox.setEnabled(False)
-        self.project_groupBox.setEnabled(False)
+        self.module_tab.setEnabled(False)
+        self.plugin_tab.setEnabled(False)
+        self.project_tab.setEnabled(False)
 
     def __moduleSelection_loadingFinished(self):
         self.db_groupBox.setEnabled(True)
@@ -149,13 +149,13 @@ class MainDialog(QDialog, DIALOG_UI):
         if self.__moduleSelectionWidget.lastError() is not None:
             return
 
-        self.module_groupBox.setEnabled(True)
+        self.module_tab.setEnabled(True)
 
         if module_package.asset_plugin is not None:
-            self.plugin_groupBox.setEnabled(True)
+            self.plugin_tab.setEnabled(True)
 
         if module_package.asset_project is not None:
-            self.project_groupBox.setEnabled(True)
+            self.project_tab.setEnabled(True)
 
         self.__moduleWidget.setModulePackage(
             self.__moduleSelectionWidget.getSelectedModulePackage()
