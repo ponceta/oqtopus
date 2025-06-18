@@ -14,7 +14,7 @@ on:
     branches:
       - main
     paths:
-      - plugin/**
+      - octopus/**
   workflow_dispatch:
 
 
