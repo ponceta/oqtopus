@@ -1,12 +1,12 @@
 [general]
 name=Oqtopus Module Management Tool
 qgisMinimumVersion=3.0
-description=This is the management tool for every PUM based module installation and upgrade
+description=Management tool for every PUM based module installation and upgrade
 version=0.1
 author=OPENGIS.ch
 email=info@opengis.ch
 
-about=This is the management tool for every PUM based module installation and upgrade
+about=Management tool for every PUM based module installation and upgrade
 homepage=https://opengisch.github.io/oqtopus
 tracker=https://github.com/opengisch/oqtopus/issues
 repository=https://github.com/opengisch/oqtopus
