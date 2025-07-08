@@ -31,4 +31,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: oqtopus-wheel
-          path: dist/*.whl
+          path: dist/*
+          if-no-files-found: error
