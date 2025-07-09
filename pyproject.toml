@@ -30,3 +30,6 @@ where = ["."]
 [tool.setuptools-git-versioning]
 enabled = true
 starting_version = "0.0.1"
+
+[tool.setuptools.package-data]
+"oqtopus" = ["**/*.ui"]
