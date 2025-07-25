@@ -113,6 +113,7 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__databaseConnectionWidget.signal_connectionChanged.connect(
             self.__databaseConnectionWidget_connectionChanged
         )
+        self.__databaseConnectionWidget_connectionChanged()
 
         self.module_tab.setEnabled(False)
         self.plugin_tab.setEnabled(False)
@@ -175,3 +176,5 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __databaseConnectionWidget_connectionChanged(self):
         self.__moduleWidget.setDatabaseConnection(self.__databaseConnectionWidget.getConnection())
+
+        self.__projectWidget.setService(self.__databaseConnectionWidget.getService())
