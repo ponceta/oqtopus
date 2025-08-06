@@ -8,20 +8,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oqtopus"
 description = "A QGIS module manager"
-dynamic = ["version"]
+dynamic = ["version", "dependencies"]
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 authors = [
   { name="Damiano Lombardi", email="damiano@opengis.ch" }
-]
-dependencies = [
-  "pyyaml",
-  "pgserviceparser>=2.4.0,<3.0.0",
-  "pum>=1.1.13,<2.0.0",
-  "pydantic>=2.0",
-  "psycopg>=3.1.0,<4.0.0",
-  "requests>=2.31.0,<3.0.0"
 ]
 
 [tool.setuptools.packages.find]
@@ -33,3 +25,6 @@ starting_version = "0.0.1"
 
 [tool.setuptools.package-data]
 "oqtopus" = ["**/*.ui"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
