@@ -4,6 +4,10 @@
 
 # oQtopus
 
-oQtopus is an open-source platform designed to simplify and automate the deployment and management of PostgreSQL/postgis modules with QGIS projects.
+oQtopus is designed to deploy, manage and upgrade QGIS projects and plugins along with their associated postgreSQL / PostGIS datamodel implementations.
 
-![oqtopus_start_screen](./assets/images/oqtopus_start_screen.png){: style="width:800px"}
+Installation and upgrade* of your datamodel implementations are done through the PostgreSQL Upgrade Manager [pum](https://github.com/opengisch/pum/).
+
+It is open source and can be used as a QGIS plugin or a standalone tool.
+
+*Upgrade functionnality has now reach the development phase, it should be available in the next months.
