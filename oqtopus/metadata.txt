@@ -1,6 +1,8 @@
 [general]
 name=Oqtopus Module Management Tool
 qgisMinimumVersion=3.0
+qgisMaximumVersion=4.99
+supportsQt6=True
 description=This is the management tool for every PUM based module installation and upgrade
 version=0.1
 author=OPENGIS.ch
@@ -17,5 +19,3 @@ icon=icons/oqtopus-logo.png
 experimental=True
 deprecated=False
 server=False
-
-supportsQt6=True
