@@ -49,7 +49,7 @@ class ModuleWidget(QWidget, DIALOG_UI):
             CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(
-                    f"The selected file '{self.__current_module_package.source_package_zip}' does not contain a valid package directory."
+                    f"The selected file '{self.__current_module_package.source_package_zip}' doesn't contain a valid package directory."
                 ),
                 None,
                 self,
@@ -62,7 +62,7 @@ class ModuleWidget(QWidget, DIALOG_UI):
             CriticalMessageBox(
                 self.tr("Error"),
                 self.tr(
-                    f"The selected file '{self.__current_module_package.source_package_zip}' does not contain a valid .pum.yaml file."
+                    f"The selected file '{self.__current_module_package.source_package_zip}' doesn't contain a valid .pum.yaml file."
                 ),
                 None,
                 self,
@@ -140,6 +140,7 @@ class ModuleWidget(QWidget, DIALOG_UI):
                     roles=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
                     grant=self.db_parameters_CreateAndGrantRoles_checkBox.isChecked(),
                     beta_testing=beta_testing,
+                    commit=False,
                 )
 
                 if self.db_demoData_checkBox.isChecked():
@@ -149,6 +150,9 @@ class ModuleWidget(QWidget, DIALOG_UI):
                         name=demo_data_name,
                         parameters=parameters,
                     )
+
+                self.__database_connection.commit()
+
         except Exception as exception:
             CriticalMessageBox(
                 self.tr("Error"), self.tr("Can't install the module:"), exception, self
