@@ -10,7 +10,7 @@ modules:
     repository: district_heating
 
   - name: TEKSI Cemetery
-    id: tcm
+    id: tce
     organisation: teksi
     repository: cemetery
 
