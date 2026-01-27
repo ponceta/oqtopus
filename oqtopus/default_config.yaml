@@ -4,6 +4,14 @@ modules:
     organisation: teksi
     repository: wastewater
 
+  - name: TEKSI District Heating
+    organisation: teksi
+    repository: district_heating
+
+  - name: TEKSI Cemetery
+    organisation: teksi
+    repository: cemetery
+
   - name: SIGNALO
     organisation: opengisch
     repository: signalo
