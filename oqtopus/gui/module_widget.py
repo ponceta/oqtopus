@@ -567,15 +567,20 @@ class ModuleWidget(QWidget, DIALOG_UI):
             installed_schemas = SchemaMigrations.schemas_with_migrations(
                 self.__database_connection
             )
+
+        module_name = self.__current_module_package.module.name
+        module_id = self.__current_module_package.module.id
         if installed_schemas:
             schema_list = ", ".join([f"<b>{schema}</b>" for schema in installed_schemas])
             self.moduleInfo_installation_label.setText(
                 self.tr(
-                    f"No module installed in this schema.<br>Module(s) in other schema(s): {schema_list}"
+                    f"No module <b>{module_name} ({module_id})</b> installed in this schema.<br>Module(s) in other schema(s): {schema_list}"
                 )
             )
         else:
-            self.moduleInfo_installation_label.setText(self.tr("No module installed"))
+            self.moduleInfo_installation_label.setText(
+                self.tr(f"No module <b>{module_name} ({module_id})</b> installed")
+            )
         QtUtils.resetForegroundColor(self.moduleInfo_installation_label)
         self.moduleInfo_install_pushButton.setText(self.tr(f"Install {version}"))
         self.moduleInfo_stackedWidget.setCurrentWidget(self.moduleInfo_stackedWidget_pageInstall)
