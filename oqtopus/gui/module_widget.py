@@ -32,7 +32,10 @@ class ModuleWidget(QWidget, DIALOG_UI):
         self.moduleInfo_install_pushButton.clicked.connect(self.__installModuleClicked)
         self.moduleInfo_upgrade_pushButton.clicked.connect(self.__upgradeModuleClicked)
         self.moduleInfo_roles_pushButton.clicked.connect(self.__rolesClicked)
+        self.moduleInfo_drop_app_pushButton.clicked.connect(self.__dropAppClicked)
+        self.moduleInfo_recreate_app_pushButton.clicked.connect(self.__recreateAppClicked)
         self.uninstall_button.clicked.connect(self.__uninstallModuleClicked)
+        self.uninstall_button_maintain.clicked.connect(self.__uninstallModuleClicked)
         self.moduleInfo_cancel_button.clicked.connect(self.__cancelOperationClicked)
 
         self.__current_module_package = None
@@ -519,6 +522,98 @@ class ModuleWidget(QWidget, DIALOG_UI):
             ).exec()
             return
 
+    def __dropAppClicked(self):
+        """Execute drop app handlers for the current module."""
+        if self.__current_module_package is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module package first."), None, self
+            ).exec()
+            return
+
+        if self.__database_connection is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please connect to a database first."), None, self
+            ).exec()
+            return
+
+        if self.__pum_config is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Module configuration not loaded."), None, self
+            ).exec()
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.tr("Drop app"),
+            self.tr(
+                "Are you sure you want to drop the application?\n\n"
+                "This will execute drop app handlers defined in the module configuration."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            parameters = self.parameters_groupbox.parameters_values()
+
+            # Start background drop app operation
+            self.__startOperation("drop_app", parameters, {})
+
+        except Exception as exception:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't drop app:"), exception, self
+            ).exec()
+            return
+
+    def __recreateAppClicked(self):
+        """Execute recreate app (drop + create) handlers for the current module."""
+        if self.__current_module_package is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please select a module package first."), None, self
+            ).exec()
+            return
+
+        if self.__database_connection is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Please connect to a database first."), None, self
+            ).exec()
+            return
+
+        if self.__pum_config is None:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Module configuration not loaded."), None, self
+            ).exec()
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.tr("(Re)create app"),
+            self.tr(
+                "Are you sure you want to recreate the application?\n\n"
+                "This will first drop the app and then create it again, executing the corresponding handlers."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            parameters = self.parameters_groupbox.parameters_values()
+
+            # Start background recreate app operation
+            self.__startOperation("recreate_app", parameters, {})
+
+        except Exception as exception:
+            CriticalMessageBox(
+                self.tr("Error"), self.tr("Can't recreate app:"), exception, self
+            ).exec()
+            return
+
     def __show_error_state(self, message: str, on_label=None):
         """Display an error state and hide the widget content."""
         label = on_label or self.moduleInfo_selected_label
@@ -526,8 +621,9 @@ class ModuleWidget(QWidget, DIALOG_UI):
         QtUtils.setForegroundColor(label, PluginUtils.COLOR_WARNING)
         # Hide the stacked widget entirely when in error state
         self.moduleInfo_stackedWidget.setVisible(False)
-        # Also hide uninstall button since module info is not valid
+        # Also hide uninstall buttons since module info is not valid
         self.uninstall_button.setVisible(False)
+        self.uninstall_button_maintain.setVisible(False)
 
     def __show_database_info_page(self):
         """Show database information page when no module package is selected."""
@@ -557,8 +653,9 @@ class ModuleWidget(QWidget, DIALOG_UI):
         # Hide the stacked widget since no module is selected
         self.moduleInfo_stackedWidget.setVisible(False)
 
-        # Hide uninstall button
+        # Hide uninstall buttons
         self.uninstall_button.setVisible(False)
+        self.uninstall_button_maintain.setVisible(False)
 
     def __show_install_page(self, version: str):
         """Switch to install page and configure it."""
@@ -608,6 +705,14 @@ class ModuleWidget(QWidget, DIALOG_UI):
             schema_list = ", ".join([f"<b>{schema}</b>" for schema in other_schemas])
             install_text += f"<br>Module(s) in other schema(s): {schema_list}"
 
+        # Check if versions are equal - if so, show maintain page instead
+        if target_version <= baseline_version:
+            self.__show_maintain_page(
+                module_name, baseline_version, target_version, beta_testing, other_schemas
+            )
+            return
+
+        # Show upgrade page for different versions
         self.moduleInfo_installation_label.setText(install_text)
         if beta_testing:
             QtUtils.setForegroundColor(
@@ -620,29 +725,58 @@ class ModuleWidget(QWidget, DIALOG_UI):
         # Ensure the stacked widget is visible when showing a valid page
         self.moduleInfo_stackedWidget.setVisible(True)
 
-        # Enable/disable upgrade button and show/hide roles button based on version comparison
-        if target_version <= baseline_version:
-            self.moduleInfo_upgrade_pushButton.setDisabled(True)
-            self.db_parameters_CreateAndGrantRoles_upgrade_checkBox.setDisabled(True)
-            # Show roles button when upgrade is not possible (same or higher version installed)
-            self.moduleInfo_roles_pushButton.setVisible(True)
-            logger.info(
-                f"Selected version {target_version} is equal to or lower than installed version {baseline_version}"
+        # Enable upgrade controls
+        self.moduleInfo_upgrade_pushButton.setEnabled(True)
+        self.db_parameters_CreateAndGrantRoles_upgrade_checkBox.setEnabled(True)
+
+    def __show_maintain_page(
+        self,
+        module_name: str,
+        baseline_version: str,
+        target_version: str,
+        beta_testing: bool = False,
+        other_schemas: list = None,
+    ):
+        """Switch to maintain page when installed version equals selected version."""
+        beta_text = " (BETA TESTING)" if beta_testing else ""
+
+        # Build installation info text
+        install_text = f"Installed: module {module_name} at version {baseline_version}{beta_text}."
+        if other_schemas:
+            schema_list = ", ".join([f"<b>{schema}</b>" for schema in other_schemas])
+            install_text += f"<br>Module(s) in other schema(s): {schema_list}"
+
+        self.moduleInfo_installation_label.setText(install_text)
+        if beta_testing:
+            QtUtils.setForegroundColor(
+                self.moduleInfo_installation_label, PluginUtils.COLOR_WARNING
             )
         else:
-            self.moduleInfo_upgrade_pushButton.setEnabled(True)
-            self.db_parameters_CreateAndGrantRoles_upgrade_checkBox.setEnabled(True)
-            # Hide roles button when upgrade is possible
-            self.moduleInfo_roles_pushButton.setVisible(False)
+            QtUtils.resetForegroundColor(self.moduleInfo_installation_label)
+
+        # Update the maintain page label
+        self.moduleInfo_selected_label_maintain.setText(
+            self.tr(f"Module selected:{module_name} - {target_version}")
+        )
+        QtUtils.resetForegroundColor(self.moduleInfo_selected_label_maintain)
+
+        self.moduleInfo_stackedWidget.setCurrentWidget(self.moduleInfo_stackedWidget_pageMaintain)
+        # Ensure the stacked widget is visible when showing a valid page
+        self.moduleInfo_stackedWidget.setVisible(True)
+
+        logger.info(
+            f"Selected version {target_version} is equal to or lower than installed version {baseline_version}. Showing maintain page."
+        )
 
     def __configure_uninstall_button(self):
-        """Show/hide uninstall button based on configuration."""
+        """Show/hide uninstall buttons based on configuration."""
         has_uninstall = bool(
             self.__pum_config
             and self.__pum_config.config.uninstall
             and len(self.__pum_config.config.uninstall) > 0
         )
         self.uninstall_button.setVisible(has_uninstall)
+        self.uninstall_button_maintain.setVisible(has_uninstall)
 
     def __updateModuleInfo(self):
         if self.__current_module_package is None:
@@ -716,6 +850,14 @@ class ModuleWidget(QWidget, DIALOG_UI):
             )
         elif operation == "roles":
             self.__operation_task.start_roles(
+                self.__pum_config, self.__database_connection, parameters, **options
+            )
+        elif operation == "drop_app":
+            self.__operation_task.start_drop_app(
+                self.__pum_config, self.__database_connection, parameters, **options
+            )
+        elif operation == "recreate_app":
+            self.__operation_task.start_recreate_app(
                 self.__pum_config, self.__database_connection, parameters, **options
             )
 
