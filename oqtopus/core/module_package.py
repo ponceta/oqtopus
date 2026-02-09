@@ -39,6 +39,9 @@ class ModulePackage:
         self.asset_project = None
         self.asset_plugin = None
 
+        self.source_package_zip = None
+        self.source_package_dir = None
+
         if self.type == ModulePackage.Type.RELEASE:
             self.__parse_release(json_payload)
         elif self.type == ModulePackage.Type.BRANCH:
@@ -55,9 +58,6 @@ class ModulePackage:
             type = "tags"
 
         self.download_url = f"https://github.com/{self.organisation}/{self.repository}/archive/refs/{type}/{self.branch}.zip"
-
-        self.source_package_zip = None
-        self.source_package_dir = None
 
     def display_name(self):
         if self.prerelease:

@@ -250,13 +250,13 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
     def __packagePrepareTaskFinished(self):
         logger.info("Load package task finished")
 
-        self.signal_loadingFinished.emit()
         self.module_progressBar.setVisible(False)
 
         if isinstance(self.__packagePrepareTask.lastError, PackagePrepareTaskCanceled):
             logger.info("Load package task was canceled by user.")
             self.module_information_label.setText(self.tr("Package loading canceled."))
             QtUtils.setForegroundColor(self.module_information_label, PluginUtils.COLOR_WARNING)
+            # Don't emit signal_loadingFinished when cancelled - a new load may be starting
             return
 
         if self.__packagePrepareTask.lastError is not None:
@@ -266,7 +266,10 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
             ).exec()
             self.module_information_label.setText(error_text)
             QtUtils.setForegroundColor(self.module_information_label, PluginUtils.COLOR_WARNING)
+            self.signal_loadingFinished.emit()
             return
+
+        self.signal_loadingFinished.emit()
 
         package_dir = self.module_package_comboBox.currentData().source_package_dir
         logger.info(f"Package loaded into '{package_dir}'")
@@ -418,8 +421,13 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
         logger.info("Loading development versions finished")
 
         QApplication.restoreOverrideCursor()
-        self.signal_loadingFinished.emit()
         self.module_progressBar.setVisible(False)
+
+        # Hide zip widget when loading development versions
+        self.module_zipPackage_groupBox.setVisible(False)
+
+        # Clear current module package - user needs to select a specific version
+        self.__current_module_package = None
 
         if error:
             if "rate limit exceeded for url" in error.lower():

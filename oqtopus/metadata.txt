@@ -20,5 +20,3 @@ icon=icons/oqtopus-logo.png
 experimental=True
 deprecated=False
 server=False
-
-supportsQt6=True
