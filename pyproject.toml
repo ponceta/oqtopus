@@ -28,3 +28,4 @@ starting_version = "0.0.1"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+optional-dependencies.standalone = {file = ["requirements-standalone.txt"]}
