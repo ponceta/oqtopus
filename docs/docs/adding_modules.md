@@ -31,6 +31,8 @@ modules:
     repository: wastewater
 ```
 
+#### ModuleConfig
+
 ::: oqtopus.core.modules_config.ModuleConfig
 
 ### 3. Required fields
