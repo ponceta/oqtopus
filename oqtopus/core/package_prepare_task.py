@@ -21,7 +21,7 @@ def sanitize_filename(name: str) -> str:
     For PR names like "#909 some title", extracts just the number to keep paths short.
     """
     # For PR-style names starting with #, extract just the number
-    pr_match = re.match(r"#?(\d+)", name)
+    pr_match = re.match(r"#(\d+)", name)
     if pr_match:
         return f"PR_{pr_match.group(1)}"
 
