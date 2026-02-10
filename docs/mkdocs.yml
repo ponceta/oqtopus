@@ -48,6 +48,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          paths: [..]
           options:
             show_signature: true
             show_signature_annotations: true
