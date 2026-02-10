@@ -31,6 +31,8 @@ modules:
     repository: wastewater
 ```
 
+::: oqtopus.core.ModuleConfig
+
 ### 3. Required fields
 
 Each module entry must include:
