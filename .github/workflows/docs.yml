@@ -18,6 +18,13 @@ on:
       - .github/workflows/docs.yml
       - docs/**/*
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 # Allow one concurrent deployment
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -30,9 +37,9 @@ jobs:
 
     steps:
     - name: Get source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
 
@@ -41,16 +48,19 @@ jobs:
         python -m pip install -r docs/requirements.txt
 
     - name: Build documentation
-      run: mkdocs build -f docs/mkdocs.yml
+      run: zensical build -f docs/mkdocs.yml
 
-    - uses: actions/upload-artifact@v4
-      if: ${{ github.event_name == 'pull_request' }}
+    - uses: actions/upload-pages-artifact@v4
       with:
-        name: docs
         path: docs/site
-        if-no-files-found: error
 
-    - name: Deploy to GitHub Pages
-      if: contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
-      working-directory: docs
-      run: mkdocs gh-deploy --force
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' && github.ref_type != 'tag' }}
+    environment:
+      name: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
