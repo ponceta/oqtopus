@@ -684,35 +684,23 @@ class ModuleWidget(QWidget, DIALOG_UI):
         # Ensure the stacked widget is visible when showing a valid page
         self.moduleInfo_stackedWidget.setVisible(True)
 
-    def __show_upgrade_page(
+    def __build_installation_text(
         self,
         module_name: str,
         baseline_version: str,
-        target_version: str,
         beta_testing: bool = False,
-    ):
-        """Switch to upgrade page and configure it."""
+        other_schemas: list = None,
+    ) -> str:
+        """Build the installation info text shown above the action pages."""
         beta_text = " (BETA TESTING)" if beta_testing else ""
-
-        # Check for modules in other schemas
-        sm = SchemaMigrations(self.__pum_config)
-        with self.__database_connection.transaction():
-            other_schemas = sm.exists_in_other_schemas(self.__database_connection)
-
-        # Build installation info text
         install_text = f"Installed: module {module_name} at version {baseline_version}{beta_text}."
         if other_schemas:
             schema_list = ", ".join([f"<b>{schema}</b>" for schema in other_schemas])
             install_text += f"<br>Module(s) in other schema(s): {schema_list}"
+        return install_text
 
-        # Check if versions are equal - if so, show maintain page instead
-        if target_version <= baseline_version:
-            self.__show_maintain_page(
-                module_name, baseline_version, target_version, beta_testing, other_schemas
-            )
-            return
-
-        # Show upgrade page for different versions
+    def __set_installation_label(self, install_text: str, beta_testing: bool = False):
+        """Set the installation label text and color."""
         self.moduleInfo_installation_label.setText(install_text)
         if beta_testing:
             QtUtils.setForegroundColor(
@@ -720,9 +708,23 @@ class ModuleWidget(QWidget, DIALOG_UI):
             )
         else:
             QtUtils.resetForegroundColor(self.moduleInfo_installation_label)
+
+    def __show_upgrade_page(
+        self,
+        module_name: str,
+        baseline_version: str,
+        target_version: str,
+        install_text: str,
+        beta_testing: bool = False,
+    ):
+        """Switch to upgrade page when selected version is newer than installed."""
+        self.__set_installation_label(install_text, beta_testing)
+        self.moduleInfo_selected_label.setText(
+            self.tr(f"Module selected: {module_name} - {target_version}")
+        )
+        QtUtils.resetForegroundColor(self.moduleInfo_selected_label)
         self.moduleInfo_upgrade_pushButton.setText(self.tr(f"Upgrade to {target_version}"))
         self.moduleInfo_stackedWidget.setCurrentWidget(self.moduleInfo_stackedWidget_pageUpgrade)
-        # Ensure the stacked widget is visible when showing a valid page
         self.moduleInfo_stackedWidget.setVisible(True)
 
         # Enable upgrade controls
@@ -734,38 +736,65 @@ class ModuleWidget(QWidget, DIALOG_UI):
         module_name: str,
         baseline_version: str,
         target_version: str,
+        install_text: str,
         beta_testing: bool = False,
-        other_schemas: list = None,
     ):
-        """Switch to maintain page when installed version equals selected version."""
-        beta_text = " (BETA TESTING)" if beta_testing else ""
+        """Switch to maintain page when selected version matches installed version."""
+        self.__set_installation_label(install_text, beta_testing)
 
-        # Build installation info text
-        install_text = f"Installed: module {module_name} at version {baseline_version}{beta_text}."
-        if other_schemas:
-            schema_list = ", ".join([f"<b>{schema}</b>" for schema in other_schemas])
-            install_text += f"<br>Module(s) in other schema(s): {schema_list}"
-
-        self.moduleInfo_installation_label.setText(install_text)
-        if beta_testing:
-            QtUtils.setForegroundColor(
-                self.moduleInfo_installation_label, PluginUtils.COLOR_WARNING
-            )
-        else:
-            QtUtils.resetForegroundColor(self.moduleInfo_installation_label)
-
-        # Update the maintain page label
         self.moduleInfo_selected_label_maintain.setText(
-            self.tr(f"Module selected:{module_name} - {target_version}")
+            self.tr(f"Module selected: {module_name} - {target_version}")
         )
         QtUtils.resetForegroundColor(self.moduleInfo_selected_label_maintain)
 
+        # Enable all maintenance buttons
+        self.moduleInfo_drop_app_pushButton.setEnabled(True)
+        self.moduleInfo_recreate_app_pushButton.setEnabled(True)
+        self.moduleInfo_roles_pushButton.setEnabled(True)
+        self.uninstall_button_maintain.setEnabled(True)
+
         self.moduleInfo_stackedWidget.setCurrentWidget(self.moduleInfo_stackedWidget_pageMaintain)
-        # Ensure the stacked widget is visible when showing a valid page
         self.moduleInfo_stackedWidget.setVisible(True)
 
         logger.info(
-            f"Selected version {target_version} is equal to or lower than installed version {baseline_version}. Showing maintain page."
+            f"Selected version {target_version} matches installed version {baseline_version}. Showing maintain page."
+        )
+
+    def __show_version_mismatch_page(
+        self,
+        module_name: str,
+        baseline_version: str,
+        target_version: str,
+        install_text: str,
+        beta_testing: bool = False,
+    ):
+        """Switch to maintain page with limited operations when selected version is older than installed."""
+        self.__set_installation_label(install_text, beta_testing)
+
+        self.moduleInfo_selected_label_maintain.setText(
+            self.tr(
+                f"Module selected: {module_name} - {target_version}<br>"
+                f"<b>The selected version is older than the installed version ({baseline_version}).</b><br>"
+                f"Maintenance operations are not available. "
+                f"Please select the matching version ({baseline_version}) to perform maintenance."
+            )
+        )
+        QtUtils.setForegroundColor(
+            self.moduleInfo_selected_label_maintain, PluginUtils.COLOR_WARNING
+        )
+
+        # Disable all maintenance buttons
+        self.moduleInfo_drop_app_pushButton.setEnabled(False)
+        self.moduleInfo_recreate_app_pushButton.setEnabled(False)
+        self.moduleInfo_roles_pushButton.setEnabled(False)
+        self.uninstall_button_maintain.setEnabled(False)
+
+        self.moduleInfo_stackedWidget.setCurrentWidget(self.moduleInfo_stackedWidget_pageMaintain)
+        self.moduleInfo_stackedWidget.setVisible(True)
+
+        logger.info(
+            f"Selected version {target_version} is older than installed version {baseline_version}. "
+            f"Maintenance operations disabled."
         )
 
     def __configure_uninstall_button(self):
@@ -797,16 +826,9 @@ class ModuleWidget(QWidget, DIALOG_UI):
             self.__show_error_state("No PUM config available")
             return
 
-        migrationVersion = self.__pum_config.last_version()
+        target_version = self.__pum_config.last_version()
+        module_name = self.__current_module_package.module.name
         sm = SchemaMigrations(self.__pum_config)
-
-        # Set the selected module info
-        self.moduleInfo_selected_label.setText(
-            self.tr(
-                f"Module selected:{self.__current_module_package.module.name} - {migrationVersion}"
-            )
-        )
-        QtUtils.resetForegroundColor(self.moduleInfo_selected_label)
 
         self.moduleInfo_stackedWidget.setEnabled(True)
         self.__configure_uninstall_button()
@@ -814,21 +836,52 @@ class ModuleWidget(QWidget, DIALOG_UI):
         # Wrap read-only queries in transaction to prevent idle connections
         with self.__database_connection.transaction():
             if sm.exists(self.__database_connection):
-                # Module is installed - show upgrade page
+                # Module is installed - determine which page to show
                 baseline_version = sm.baseline(self.__database_connection)
                 migration_details = sm.migration_details(self.__database_connection)
                 installed_beta_testing = migration_details.get("beta_testing", False)
-                self.__show_upgrade_page(
-                    self.__current_module_package.module.name,
-                    baseline_version,
-                    migrationVersion,
-                    installed_beta_testing,
+                other_schemas = sm.exists_in_other_schemas(self.__database_connection)
+
+                install_text = self.__build_installation_text(
+                    module_name, baseline_version, installed_beta_testing, other_schemas
                 )
+
+                logger.info(
+                    f"Version comparison: target={target_version} (type={type(target_version).__name__}), "
+                    f"baseline={baseline_version} (type={type(baseline_version).__name__}), "
+                    f"target > baseline: {target_version > baseline_version}, "
+                    f"target == baseline: {target_version == baseline_version}"
+                )
+
+                if target_version > baseline_version:
+                    self.__show_upgrade_page(
+                        module_name,
+                        baseline_version,
+                        target_version,
+                        install_text,
+                        installed_beta_testing,
+                    )
+                elif target_version == baseline_version:
+                    self.__show_maintain_page(
+                        module_name,
+                        baseline_version,
+                        target_version,
+                        install_text,
+                        installed_beta_testing,
+                    )
+                else:
+                    self.__show_version_mismatch_page(
+                        module_name,
+                        baseline_version,
+                        target_version,
+                        install_text,
+                        installed_beta_testing,
+                    )
 
                 logger.info(f"Migration table details: {migration_details}")
             else:
                 # Module not installed - show install page
-                self.__show_install_page(migrationVersion)
+                self.__show_install_page(target_version)
 
     def __startOperation(self, operation: str, parameters: dict, options: dict):
         """Start a background module operation."""
