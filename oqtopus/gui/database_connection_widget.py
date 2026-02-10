@@ -174,6 +174,12 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
     def __set_connection(self, connection):
         """
         Set the current database connection and emit the signal_connectionChanged signal.
+        Closes the previous connection if it exists.
         """
+        if self.__database_connection is not None:
+            try:
+                self.__database_connection.close()
+            except Exception:
+                pass
         self.__database_connection = connection
         self.signal_connectionChanged.emit()
