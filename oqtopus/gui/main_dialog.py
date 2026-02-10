@@ -55,7 +55,6 @@ DIALOG_UI = PluginUtils.get_ui_class("main_dialog.ui")
 
 
 class MainDialog(QDialog, DIALOG_UI):
-
     def __init__(self, modules_config_path, about_dialog_cls=None, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
