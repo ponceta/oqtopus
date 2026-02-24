@@ -25,17 +25,6 @@ modules:
     repository: wastewater
 ```
 
-### Required fields
-
-Each module entry must include:
-
-| Field            | Description                                                    |
-|------------------|----------------------------------------------------------------|
-| `name`           | Human-readable name shown in the module dropdown.              |
-| `id`             | Short unique identifier for the module.                        |
-| `organisation`   | GitHub organization or user that owns the repository.          |
-| `repository`     | GitHub repository name containing the module.                  |
-
 ### ModuleConfig reference
 
 ::: oqtopus.core.modules_config.ModuleConfig

@@ -5,12 +5,12 @@ class ModuleConfig(BaseModel):
     """Configuration for a single module.
 
     Attributes:
-        name: Display name of the module.
-        id: Unique identifier for the module (used for loading).
-        organisation: GitHub organisation where the module is hosted.
-        repository: GitHub repository name for the module.
-        exclude_releases: Optional regex pattern to exclude certain releases.
-        experimental: Whether this module is experimental (not shown by default).
+        name: **Required.** Display name of the module.
+        id: **Required.** Unique identifier for the module (used for loading).
+        organisation: **Required.** GitHub organisation where the module is hosted.
+        repository: **Required.** GitHub repository name for the module.
+        exclude_releases: *Optional.* Regex pattern to exclude certain releases.
+        experimental: *Optional.* Whether this module is experimental (not shown by default).
     """
 
     name: str
