@@ -19,6 +19,14 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+try:
+    from qgis.core import Qgis
+    from qgis.gui import QgsMessageBar
+
+    HAS_QGS_MESSAGE_BAR = True
+except ImportError:
+    HAS_QGS_MESSAGE_BAR = False
+
 
 class MessageLevel(IntEnum):
     SUCCESS = 0
@@ -214,11 +222,25 @@ class _MessageItem(QFrame):
 # Maximum height the message bar can occupy before it becomes scrollable
 _MAX_BAR_HEIGHT = 50
 
+# Mapping from custom MessageLevel to Qgis.MessageLevel
+_QGIS_LEVEL_MAP = {}
+if HAS_QGS_MESSAGE_BAR:
+    _QGIS_LEVEL_MAP = {
+        MessageLevel.SUCCESS: Qgis.MessageLevel.Success,  # type: ignore[possibly-undefined]
+        MessageLevel.WARNING: Qgis.MessageLevel.Warning,  # type: ignore[possibly-undefined]
+        MessageLevel.ERROR: Qgis.MessageLevel.Critical,  # type: ignore[possibly-undefined]
+    }
+
+# Duration in seconds for QgsMessageBar auto-dismiss (0 = manual dismiss)
+_QGIS_SUCCESS_DURATION_S = 5
+
 
 class MessageBar(QWidget):
     """A container widget that stacks message items at the top of a dialog.
 
-    Uses a scroll area internally so messages never resize the parent dialog.
+    When running inside QGIS, delegates to ``QgsMessageBar`` for native
+    look-and-feel.  Falls back to a custom scroll-area implementation
+    otherwise (e.g. standalone mode).
     """
 
     def __init__(self, parent=None):
@@ -230,19 +252,27 @@ class MessageBar(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        self._scroll_area = QScrollArea()
-        self._scroll_area.setWidgetResizable(True)
-        self._scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        outer.addWidget(self._scroll_area)
+        if HAS_QGS_MESSAGE_BAR:
+            self._qgs_bar = QgsMessageBar(self)  # type: ignore[possibly-undefined]
+            outer.addWidget(self._qgs_bar)
+            self._use_qgs = True
+        else:
+            self._qgs_bar = None
+            self._use_qgs = False
 
-        self._inner = QWidget()
-        self._inner_layout = QVBoxLayout(self._inner)
-        self._inner_layout.setContentsMargins(0, 0, 0, 0)
-        self._inner_layout.setSpacing(4)
-        self._inner_layout.addStretch()
-        self._scroll_area.setWidget(self._inner)
+            self._scroll_area = QScrollArea()
+            self._scroll_area.setWidgetResizable(True)
+            self._scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+            self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            outer.addWidget(self._scroll_area)
+
+            self._inner = QWidget()
+            self._inner_layout = QVBoxLayout(self._inner)
+            self._inner_layout.setContentsMargins(0, 0, 0, 0)
+            self._inner_layout.setSpacing(4)
+            self._inner_layout.addStretch()
+            self._scroll_area.setWidget(self._inner)
 
     def pushMessage(
         self,
@@ -259,11 +289,19 @@ class MessageBar(QWidget):
             exception: Optional exception. When provided a *Details* button is
                        shown that opens a dialog with the full traceback.
         """
-        item = _MessageItem(text, level, exception=exception, parent=self._inner)
-        # Insert before the stretch at the end
-        self._inner_layout.insertWidget(self._inner_layout.count() - 1, item)
-        # Scroll to bottom to reveal the newest message
-        QTimer.singleShot(0, self._scroll_to_bottom)
+        if self._use_qgs:
+            qgis_level = _QGIS_LEVEL_MAP[level]
+            duration = _QGIS_SUCCESS_DURATION_S if level == MessageLevel.SUCCESS else 0
+            msg = text
+            if exception is not None:
+                msg += f"\n{exception}"
+            self._qgs_bar.pushMessage("", msg, qgis_level, duration)
+        else:
+            item = _MessageItem(text, level, exception=exception, parent=self._inner)
+            # Insert before the stretch at the end
+            self._inner_layout.insertWidget(self._inner_layout.count() - 1, item)
+            # Scroll to bottom to reveal the newest message
+            QTimer.singleShot(0, self._scroll_to_bottom)
 
     def pushSuccess(self, text: str):
         self.pushMessage(text, MessageLevel.SUCCESS)
@@ -276,22 +314,26 @@ class MessageBar(QWidget):
 
     def clearAll(self):
         """Remove all messages immediately."""
-        for i in reversed(range(self._inner_layout.count())):
-            item = self._inner_layout.itemAt(i)
-            widget = item.widget() if item else None
-            if widget and isinstance(widget, _MessageItem):
-                self._inner_layout.removeWidget(widget)
-                widget.setParent(None)
-                widget.deleteLater()
+        if self._use_qgs:
+            self._qgs_bar.clearWidgets()
+        else:
+            for i in reversed(range(self._inner_layout.count())):
+                item = self._inner_layout.itemAt(i)
+                widget = item.widget() if item else None
+                if widget and isinstance(widget, _MessageItem):
+                    self._inner_layout.removeWidget(widget)
+                    widget.setParent(None)
+                    widget.deleteLater()
 
     def _on_item_removed(self):
         """Called when a message item removes itself."""
         pass  # Nothing to do — fixed height, no layout changes
 
     def _scroll_to_bottom(self):
-        sb = self._scroll_area.verticalScrollBar()
-        if sb:
-            sb.setValue(sb.maximum())
+        if not self._use_qgs:
+            sb = self._scroll_area.verticalScrollBar()
+            if sb:
+                sb.setValue(sb.maximum())
 
     @staticmethod
     def findMessageBar(widget):
