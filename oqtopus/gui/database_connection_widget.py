@@ -16,11 +16,11 @@ from qgis.PyQt.QtWidgets import (
 from ..libs.pgserviceparser import conf_path as pgserviceparser_conf_path
 from ..libs.pgserviceparser import service_config as pgserviceparser_service_config
 from ..libs.pgserviceparser import service_names as pgserviceparser_service_names
+from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..utils.plugin_utils import PluginUtils, logger
 from ..utils.qt_utils import QtUtils
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
-from .message_bar import MessageBar
 
 libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
 if libs_path not in sys.path:
@@ -368,20 +368,9 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.__set_connection(None)
 
         try:
-            conn = psycopg.connect(service=service_name, dbname="postgres")
-            conn.autocommit = True
-            with conn.cursor() as cursor:
-                # Terminate other connections to the database
-                cursor.execute(
-                    "SELECT pg_terminate_backend(pid) "
-                    "FROM pg_stat_activity "
-                    "WHERE datname = %s AND pid <> pg_backend_pid()",
-                    [db_name],
-                )
-                cursor.execute(
-                    psycopg.sql.SQL("DROP DATABASE {}").format(psycopg.sql.Identifier(db_name))
-                )
-            conn.close()
+            from ..libs.pum.database import drop_database
+
+            drop_database({"service": service_name, "dbname": "postgres"}, db_name)
 
             MessageBar.pushSuccessToBar(self, self.tr(f"Database '{db_name}' has been dropped."))
         except Exception as e:
