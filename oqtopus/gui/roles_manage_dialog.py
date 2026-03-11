@@ -301,6 +301,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -675,6 +676,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -708,6 +710,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -742,6 +745,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -772,6 +776,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
@@ -797,6 +802,7 @@ class RolesManageDialog(QDialog):
             )
             self._refresh()
         except Exception as exc:
+            self._connection.rollback()
             QMessageBox.critical(
                 self,
                 self.tr("Error"),
