@@ -22,6 +22,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
+from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..libs.pum.role_manager import RoleInventory, RoleManager
 from .roles_create_dialog import RolesCreateDialog
 
@@ -56,6 +57,10 @@ class RolesManageDialog(QDialog):
         self.resize(850, 500)
 
         layout = QVBoxLayout(self)
+
+        # --- Message bar ---
+        self._message_bar = MessageBar(self)
+        layout.addWidget(self._message_bar)
 
         # --- Summary ---
         self._summary_label = QLabel(self)
@@ -295,19 +300,11 @@ class RolesManageDialog(QDialog):
                 grant=True,
                 commit=True,
             )
-            QMessageBox.information(
-                self,
-                self.tr("Create and grant roles"),
-                self.tr("Roles created and granted successfully."),
-            )
+            self._message_bar.pushSuccess(self.tr("Roles created and granted successfully."))
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to create roles: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to create roles."), exception=exc)
 
     def _on_create_login_role(self):
         """Prompt for a name and optional password, then create a user (LOGIN role)."""
@@ -353,19 +350,11 @@ class RolesManageDialog(QDialog):
         password = password or None
         try:
             RoleManager.create_login_role(self._connection, name, password=password, commit=True)
-            QMessageBox.information(
-                self,
-                self.tr("Create user"),
-                self.tr("User '%s' created.") % name,
-            )
+            self._message_bar.pushSuccess(self.tr("User '%s' created.") % name)
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to create user: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to create user."), exception=exc)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -670,19 +659,11 @@ class RolesManageDialog(QDialog):
                 suffix=suffix,
                 commit=True,
             )
-            QMessageBox.information(
-                self,
-                self.tr("Grant role"),
-                self.tr("%s granted to %s.") % (label, to),
-            )
+            self._message_bar.pushSuccess(self.tr("%s granted to %s.") % (label, to))
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to grant role: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to grant role."), exception=exc)
 
     def _revoke_from(
         self, *, from_role: str, roles: list[str] | None, suffix: str | None, label: str
@@ -704,19 +685,11 @@ class RolesManageDialog(QDialog):
                 suffix=suffix,
                 commit=True,
             )
-            QMessageBox.information(
-                self,
-                self.tr("Revoke role"),
-                self.tr("%s revoked from %s.") % (label, from_role),
-            )
+            self._message_bar.pushSuccess(self.tr("%s revoked from %s.") % (label, from_role))
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to revoke role: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to revoke role."), exception=exc)
 
     # ------------------------------------------------------------------
     # Revoke permissions / Drop
@@ -739,19 +712,11 @@ class RolesManageDialog(QDialog):
                 suffix=suffix,
                 commit=True,
             )
-            QMessageBox.information(
-                self,
-                self.tr("Revoke permissions"),
-                self.tr("Permissions revoked from %s.") % label,
-            )
+            self._message_bar.pushSuccess(self.tr("Permissions revoked from %s.") % label)
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to revoke permissions: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to revoke permissions."), exception=exc)
 
     def _drop_roles(self, *, roles: list[str] | None, suffix: str | None, label: str):
         """Drop one or all roles (revokes permissions first)."""
@@ -770,11 +735,7 @@ class RolesManageDialog(QDialog):
                 suffix=suffix,
                 commit=True,
             )
-            QMessageBox.information(
-                self,
-                self.tr("Drop role"),
-                self.tr("%s dropped.") % label,
-            )
+            self._message_bar.pushSuccess(self.tr("%s dropped.") % label)
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
@@ -823,19 +784,11 @@ class RolesManageDialog(QDialog):
                     force=True,
                     commit=True,
                 )
-                QMessageBox.information(
-                    self,
-                    self.tr("Drop role"),
-                    self.tr("%s dropped.") % label,
-                )
+                self._message_bar.pushSuccess(self.tr("%s dropped.") % label)
                 self._refresh()
             except Exception as exc2:
                 self._connection.rollback()
-                QMessageBox.critical(
-                    self,
-                    self.tr("Error"),
-                    self.tr("Failed to drop role: %s") % exc2,
-                )
+                self._message_bar.pushError(self.tr("Failed to drop role."), exception=exc2)
 
     def _drop_user(self, name: str):
         """Drop a user (a role with LOGIN privilege)."""
@@ -849,16 +802,8 @@ class RolesManageDialog(QDialog):
 
         try:
             RoleManager.drop_login_role(self._connection, name, commit=True)
-            QMessageBox.information(
-                self,
-                self.tr("Drop user"),
-                self.tr("User '%s' dropped.") % name,
-            )
+            self._message_bar.pushSuccess(self.tr("User '%s' dropped.") % name)
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to drop user: %s") % exc,
-            )
+            self._message_bar.pushError(self.tr("Failed to drop user."), exception=exc)
