@@ -16,6 +16,7 @@ from qgis.PyQt.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QTextEdit,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -777,11 +778,64 @@ class RolesManageDialog(QDialog):
             self._refresh()
         except Exception as exc:
             self._connection.rollback()
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                self.tr("Failed to drop role: %s") % exc,
+
+            # Ask the user whether to force-drop by reassigning
+            # owned objects to the current connection user.
+            current_user = self._connection.execute("SELECT current_user").fetchone()[0]
+
+            dlg = QDialog(self)
+            dlg.setWindowTitle(self.tr("Drop role"))
+            dlg.setMinimumWidth(500)
+            layout = QVBoxLayout(dlg)
+
+            layout.addWidget(
+                QLabel(
+                    self.tr(
+                        "There are still dependent objects or privileges.\n"
+                        "Do you want to reassign owned objects to '%s' "
+                        "and force drop?"
+                    )
+                    % current_user
+                )
             )
+
+            details = QTextEdit(dlg)
+            details.setReadOnly(True)
+            details.setPlainText(str(exc))
+            layout.addWidget(details)
+
+            buttons = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No,
+                dlg,
+            )
+            buttons.accepted.connect(dlg.accept)
+            buttons.rejected.connect(dlg.reject)
+            layout.addWidget(buttons)
+
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            try:
+                self._role_manager.drop_roles(
+                    connection=self._connection,
+                    roles=roles,
+                    suffix=suffix,
+                    force=True,
+                    commit=True,
+                )
+                QMessageBox.information(
+                    self,
+                    self.tr("Drop role"),
+                    self.tr("%s dropped.") % label,
+                )
+                self._refresh()
+            except Exception as exc2:
+                self._connection.rollback()
+                QMessageBox.critical(
+                    self,
+                    self.tr("Error"),
+                    self.tr("Failed to drop role: %s") % exc2,
+                )
 
     def _drop_user(self, name: str):
         """Drop a user (a role with LOGIN privilege)."""
