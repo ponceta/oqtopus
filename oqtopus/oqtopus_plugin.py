@@ -12,17 +12,27 @@ from .utils.plugin_utils import PluginUtils, logger
 
 class OqtopusPlugin:
 
-    def __init__(self, iface):
+    def __init__(self, iface, modules_config_path=None, about_dialog_cls=None):
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
             which provides the hook by which you can manipulate the QGIS
             application at run time.
         :type iface: QgsInterface
+        :param modules_config_path: Optional path to the modules configuration YAML file.
+            Defaults to ``default_config.yaml`` next to this file.
+        :type modules_config_path: Path | None
+        :param about_dialog_cls: Optional custom About dialog class.
+            Defaults to the bundled ``AboutDialog``.
+        :type about_dialog_cls: type | None
         """
         # Save reference to the QGIS interface
         self.iface = iface
         self.canvas = iface.mapCanvas()
+        self._modules_config_path = (
+            modules_config_path or Path(__file__).parent / "default_config.yaml"
+        )
+        self._about_dialog_cls = about_dialog_cls or AboutDialog
 
         self.__version__ = PluginUtils.get_plugin_version()
 
@@ -176,16 +186,18 @@ class OqtopusPlugin:
             logger.debug(f"Removed {mod} from sys.modules for clean reload")
 
     def show_main_dialog(self):
-        conf_path = Path(__file__).parent / "default_config.yaml"
-
-        main_dialog = MainDialog(modules_config_path=conf_path, parent=self.iface.mainWindow())
+        main_dialog = MainDialog(
+            modules_config_path=self._modules_config_path,
+            about_dialog_cls=self._about_dialog_cls,
+            parent=self.iface.mainWindow(),
+        )
         main_dialog.exec()
 
     def show_logs_folder(self):
         PluginUtils.open_logs_folder()
 
     def show_about_dialog(self):
-        about_dialog = AboutDialog(self.iface.mainWindow())
+        about_dialog = self._about_dialog_cls(self.iface.mainWindow())
         about_dialog.exec()
 
     def _get_main_menu_action(self):
