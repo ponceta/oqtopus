@@ -13,7 +13,12 @@ from .utils.plugin_utils import PluginUtils, logger
 class OqtopusPlugin:
 
     def __init__(
-        self, iface, modules_config_path=None, about_dialog_cls=None, settings_plugin_name=None
+        self,
+        iface,
+        modules_config_path=None,
+        about_dialog_cls=None,
+        settings_plugin_name=None,
+        icon=None,
     ):
         """Constructor.
 
@@ -30,6 +35,9 @@ class OqtopusPlugin:
         :param settings_plugin_name: Optional name for the QGIS settings tree node.
             Defaults to ``"oqtopus"``.
         :type settings_plugin_name: str | None
+        :param icon: Optional path to the plugin icon.
+            Defaults to the bundled ``oqtopus-logo.png``.
+        :type icon: str | None
         """
         # Save reference to the QGIS interface
         self.iface = iface
@@ -39,6 +47,7 @@ class OqtopusPlugin:
         )
         self._about_dialog_cls = about_dialog_cls or AboutDialog
         self._settings_plugin_name = settings_plugin_name
+        self._icon = icon or PluginUtils.get_plugin_icon_path("oqtopus-logo.png")
 
         self.__version__ = PluginUtils.get_plugin_version()
 
@@ -140,7 +149,7 @@ class OqtopusPlugin:
         Settings(plugin_name=self._settings_plugin_name)
 
         self.add_action(
-            icon_path=PluginUtils.get_plugin_icon_path("oqtopus-logo.png"),
+            icon_path=self._icon,
             text=self.tr("Show &main dialog"),
             callback=self.show_main_dialog,
             parent=self.iface.mainWindow(),
@@ -161,7 +170,7 @@ class OqtopusPlugin:
             add_to_toolbar=False,
         )
         self.add_action(
-            icon_path=PluginUtils.get_plugin_icon_path("oqtopus-logo.png"),
+            icon_path=self._icon,
             text=self.tr("&About"),
             callback=self.show_about_dialog,
             parent=self.iface.mainWindow(),
@@ -169,7 +178,7 @@ class OqtopusPlugin:
         )
 
         self._get_main_menu_action().setIcon(
-            PluginUtils.get_plugin_icon("oqtopus-logo.png"),
+            QIcon(self._icon),
         )
 
     def unload(self):
