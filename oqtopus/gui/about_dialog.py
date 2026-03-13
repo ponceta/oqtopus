@@ -24,6 +24,7 @@
 
 
 import os
+import subprocess
 
 from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtGui import QFont, QPixmap
@@ -34,22 +35,26 @@ from ..utils.plugin_utils import PluginUtils
 DIALOG_UI = PluginUtils.get_ui_class("about_dialog.ui")
 
 
-def _lib_version(package_name: str, package_path: str) -> str:
-    """Return the version of a bundled library.
-
-    Tries ``importlib.metadata`` first, then falls back to scanning for a
-    ``<package>-*.dist-info/METADATA`` file next to *package_path*.
-    """
+def _git_version(path: str) -> str | None:
+    """If *path* lives inside a git repo, return ``git describe --tags``."""
     try:
-        from importlib.metadata import version
-
-        return version(package_name)
+        result = subprocess.run(
+            ["git", "describe", "--tags"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
     except Exception:
         pass
+    return None
 
-    # Fallback: look for a dist-info directory next to the package
-    libs_dir = os.path.dirname(package_path)
-    prefix = f"{package_name}-"
+
+def _dist_info_version(libs_dir: str, dist_name: str) -> str | None:
+    """Return version from the ``<dist_name>-*.dist-info/METADATA`` in *libs_dir*."""
+    prefix = f"{dist_name}-"
     for entry in os.listdir(libs_dir):
         if entry.startswith(prefix) and entry.endswith(".dist-info"):
             metadata_file = os.path.join(libs_dir, entry, "METADATA")
@@ -60,26 +65,32 @@ def _lib_version(package_name: str, package_path: str) -> str:
                             return line.split(":", 1)[1].strip()
             # Extract from directory name as last resort
             return entry[len(prefix) : -len(".dist-info")]
-    return "?"
+    return None
 
 
-def get_library_versions() -> list[dict[str, str]]:
-    """Return version info for oqtopus and its bundled libraries.
+def get_library_version(name: str) -> dict[str, str]:
+    """Return version info for a bundled library.
 
-    Each entry is a dict with keys ``name``, ``version``, and ``path``.
+    Looks for a ``<name>-*.dist-info`` directory under ``libs/`` and
+    extracts the version.  When the library is symlinked to a git repo
+    (dev mode), ``git describe --tags`` is used instead.
+
+    Returns a dict with keys ``name``, ``version``, and ``path``.
     """
-    oqtopus_path = PluginUtils.plugin_root_path()
-    oqtopus_version = _lib_version("oqtopus", oqtopus_path)
+    libs_dir = os.path.join(PluginUtils.plugin_root_path(), "libs")
+    pkg_path = os.path.join(libs_dir, name)
 
-    from ..libs import pum as _pum_pkg
+    # Dev mode: if the package is a symlink into a git repo, use git
+    version = None
+    real_path = os.path.realpath(pkg_path)
+    if real_path != os.path.abspath(pkg_path) and os.path.isdir(real_path):
+        version = _git_version(real_path)
 
-    pum_path = os.path.dirname(_pum_pkg.__file__)
-    pum_version = _lib_version("pum", pum_path)
+    # Otherwise read from dist-info
+    if version is None and os.path.isdir(libs_dir):
+        version = _dist_info_version(libs_dir, name)
 
-    return [
-        {"name": "oQtopus", "version": oqtopus_version, "path": oqtopus_path},
-        {"name": "PUM", "version": pum_version, "path": pum_path},
-    ]
+    return {"name": name, "version": version or "?", "path": pkg_path}
 
 
 class AboutDialog(QDialog, DIALOG_UI):
@@ -111,7 +122,10 @@ class AboutDialog(QDialog, DIALOG_UI):
         self.iconLabel.setPixmap(scaled_logo)
 
         # --- Library versions ---
-        lib_versions = get_library_versions()
+        lib_versions = [
+            get_library_version("pgserviceparser"),
+            get_library_version("pum"),
+        ]
 
         bold_font = QFont()
         bold_font.setBold(True)
