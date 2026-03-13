@@ -19,6 +19,7 @@ class OqtopusPlugin:
         about_dialog_cls=None,
         settings_plugin_name=None,
         icon=None,
+        title=None,
     ):
         """Constructor.
 
@@ -38,6 +39,9 @@ class OqtopusPlugin:
         :param icon: Optional path to the plugin icon.
             Defaults to the bundled ``oqtopus-logo.png``.
         :type icon: str | None
+        :param title: Optional title for the main dialog window.
+            Defaults to the UI file's window title.
+        :type title: str | None
         """
         # Save reference to the QGIS interface
         self.iface = iface
@@ -48,6 +52,7 @@ class OqtopusPlugin:
         self._about_dialog_cls = about_dialog_cls or AboutDialog
         self._settings_plugin_name = settings_plugin_name
         self._icon = icon or PluginUtils.get_plugin_icon_path("oqtopus-logo.png")
+        self._title = title
 
         self.__version__ = PluginUtils.get_plugin_version()
 
@@ -207,6 +212,8 @@ class OqtopusPlugin:
             about_dialog_cls=self._about_dialog_cls,
             parent=self.iface.mainWindow(),
         )
+        if self._title:
+            main_dialog.setWindowTitle(self._title)
         main_dialog.exec()
 
     def show_logs_folder(self):
