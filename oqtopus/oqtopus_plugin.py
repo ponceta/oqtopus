@@ -179,7 +179,8 @@ class OqtopusPlugin:
             self.iface.removeToolBarIcon(action)
 
         # Unregister the plugin settings tree node
-        QgsSettingsTree.unregisterPluginTreeNode(Settings._plugin_name)
+        plugin_name = getattr(Settings, "_plugin_name", PluginUtils.PLUGIN_ID)
+        QgsSettingsTree.unregisterPluginTreeNode(plugin_name)
         Settings.instance = None
 
         # Remove pum modules from sys.modules to allow proper reloading
