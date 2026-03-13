@@ -1,4 +1,5 @@
-from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QStyle
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QApplication, QDialog, QLineEdit, QMessageBox, QStyle
 
 from ..core.settings import Settings
 from ..utils.plugin_utils import PluginUtils
@@ -11,7 +12,16 @@ class SettingsDialog(QDialog, DIALOG_UI):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
+        self.githubToken_lineEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.githubToken_lineEdit.setText(Settings().github_token.value())
+
+        # Toggle visibility action inside the line edit
+        self._toggle_token_action = self.githubToken_lineEdit.addAction(
+            QIcon(PluginUtils.get_plugin_icon_path("eye.svg")),
+            QLineEdit.ActionPosition.TrailingPosition,
+        )
+        self._toggle_token_action.setToolTip(self.tr("Show/hide token"))
+        self._toggle_token_action.triggered.connect(self.__toggle_token_visibility)
         self.allow_multiple_modules_checkBox.setChecked(Settings().allow_multiple_modules.value())
         self.show_experimental_modules_checkBox.setChecked(
             Settings().show_experimental_modules.value()
@@ -39,6 +49,12 @@ class SettingsDialog(QDialog, DIALOG_UI):
         Settings().log_show_level.setValue(self.log_show_level_checkBox.isChecked())
         Settings().log_show_module.setValue(self.log_show_module_checkBox.isChecked())
         super().accept()
+
+    def __toggle_token_visibility(self):
+        if self.githubToken_lineEdit.echoMode() == QLineEdit.EchoMode.Password:
+            self.githubToken_lineEdit.setEchoMode(QLineEdit.EchoMode.Normal)
+        else:
+            self.githubToken_lineEdit.setEchoMode(QLineEdit.EchoMode.Password)
 
     def __show_github_token_help(self):
         QMessageBox.information(
