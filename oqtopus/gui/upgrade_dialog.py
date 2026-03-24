@@ -10,9 +10,13 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from ..core.module_package import ModulePackage
+from ..core.settings import HAS_QGS_SETTINGS, Settings
 from ..libs.pum import ParameterDefinition
 from .parameters_groupbox import ParametersGroupBox
 from .roles_groupbox import RolesGroupBox
+
+if HAS_QGS_SETTINGS:
+    from qgis.gui import QgsSettingsBoolCheckBoxWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -79,15 +83,24 @@ class UpgradeDialog(QDialog):
         layout.addWidget(self.__roles_groupbox)
 
         # Skip baseline check checkbox
-        self.__skip_baseline_check_checkbox = QCheckBox(self.tr("Skip changelog checks"), self)
-        self.__skip_baseline_check_checkbox.setToolTip(
-            self.tr(
-                "If checked, changelogs at or below the baseline version are skipped\n"
-                "without verifying they were individually applied.\n"
-                "Use this when the database was created outside PUM\n"
-                "(e.g. restored from a dump) and the baseline was set manually."
-            )
+        skip_tooltip = self.tr(
+            "If checked, changelogs at or below the baseline version are skipped\n"
+            "without verifying they were individually applied.\n"
+            "Use this when the database was created outside PUM\n"
+            "(e.g. restored from a dump) and the baseline was set manually."
         )
+        self.__skip_baseline_check_checkbox = QCheckBox(self)
+        if HAS_QGS_SETTINGS:
+            self.__skip_baseline_check_wrapper = QgsSettingsBoolCheckBoxWrapper()
+            self.__skip_baseline_check_wrapper.configureEditor(
+                self.__skip_baseline_check_checkbox, Settings().skip_baseline_check
+            )
+            self.__skip_baseline_check_wrapper.setWidgetFromSetting()
+            self.__skip_baseline_check_wrapper.configureAutomaticUpdate(self)
+        else:
+            self.__skip_baseline_check_checkbox.setChecked(Settings().skip_baseline_check.value())
+        self.__skip_baseline_check_checkbox.setText(self.tr("Skip changelog checks"))
+        self.__skip_baseline_check_checkbox.setToolTip(skip_tooltip)
         layout.addWidget(self.__skip_baseline_check_checkbox)
 
         # Add stretch to push buttons to the bottom
@@ -123,6 +136,10 @@ class UpgradeDialog(QDialog):
             )
             if reply != QMessageBox.StandardButton.Yes:
                 return
+        if not HAS_QGS_SETTINGS:
+            Settings().skip_baseline_check.setValue(
+                self.__skip_baseline_check_checkbox.isChecked()
+            )
         super().accept()
 
     def __configure_beta_testing_checkbox(self, module_package: ModulePackage):

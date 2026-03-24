@@ -133,6 +133,12 @@ class Settings:
                 False,
                 "Show the logs panel in the main dialog",
             )
+            cls.skip_baseline_check = QgsSettingsEntryBool(
+                "skip-baseline-check",
+                settings_node,
+                False,
+                "Skip changelog checks when upgrading a baselined database",
+            )
 
             # Dynamic per-module/version setting (QGIS only)
             cls.installed_project_path = QgsSettingsEntryString(
@@ -150,6 +156,7 @@ class Settings:
             cls.log_show_level = _QSettingsEntryBool("log-show-level", True)
             cls.log_show_module = _QSettingsEntryBool("log-show-module", True)
             cls.show_logs = _QSettingsEntryBool("show-logs", False)
+            cls.skip_baseline_check = _QSettingsEntryBool("skip-baseline-check", False)
 
             # Not available in standalone mode
             cls.installed_project_path = None
