@@ -78,6 +78,18 @@ class UpgradeDialog(QDialog):
         self.__roles_groupbox = RolesGroupBox(self)
         layout.addWidget(self.__roles_groupbox)
 
+        # Skip baseline check checkbox
+        self.__skip_baseline_check_checkbox = QCheckBox(self.tr("Skip changelog checks"), self)
+        self.__skip_baseline_check_checkbox.setToolTip(
+            self.tr(
+                "If checked, changelogs at or below the baseline version are skipped\n"
+                "without verifying they were individually applied.\n"
+                "Use this when the database was created outside PUM\n"
+                "(e.g. restored from a dump) and the baseline was set manually."
+            )
+        )
+        layout.addWidget(self.__skip_baseline_check_checkbox)
+
         # Add stretch to push buttons to the bottom
         layout.addStretch()
 
@@ -155,3 +167,7 @@ class UpgradeDialog(QDialog):
     def roles_options(self) -> dict:
         """Return the full roles options dict."""
         return self.__roles_groupbox.roles_options()
+
+    def skip_baseline_check(self) -> bool:
+        """Return whether skip baseline check is enabled."""
+        return self.__skip_baseline_check_checkbox.isChecked()
