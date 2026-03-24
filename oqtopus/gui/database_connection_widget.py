@@ -51,18 +51,15 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
 
         actionManagePgServices = QAction(self.tr("Manage PG services"), db_operations_menu)
         actionCreateDb = QAction(self.tr("Create database and service"), db_operations_menu)
-        self.__actionDuplicateDb = QAction(self.tr("Duplicate database"), db_operations_menu)
         actionReloadPgServices = QAction(self.tr("Reload PG Service config"), db_operations_menu)
 
         actionManagePgServices.triggered.connect(self.__managePgServicesClicked)
         actionCreateDb.triggered.connect(self.__createDatabaseClicked)
-        self.__actionDuplicateDb.triggered.connect(self.__duplicateDatabaseClicked)
         actionReloadPgServices.triggered.connect(self.__loadDatabaseInformations)
 
         db_operations_menu.addAction(actionManagePgServices)
         db_operations_menu.addSeparator()
         db_operations_menu.addAction(actionCreateDb)
-        db_operations_menu.addAction(self.__actionDuplicateDb)
         db_operations_menu.addSeparator()
         db_operations_menu.addAction(actionReloadPgServices)
 
@@ -71,15 +68,18 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         # Service-specific operations menu (next to service combobox)
         service_menu = QMenu(self.db_service_toolButton)
         self.__actionCreateDbForService = QAction(self.tr("Create database"), service_menu)
+        self.__actionDuplicateDb = QAction(self.tr("Duplicate database"), service_menu)
         self.__actionDropDb = QAction(self.tr("Drop database"), service_menu)
 
         self.__actionCreateDbForService.triggered.connect(self.__createDatabaseForServiceClicked)
+        self.__actionDuplicateDb.triggered.connect(self.__duplicateDatabaseClicked)
         self.__actionDropDb.triggered.connect(self.__dropDatabaseClicked)
 
         self.__actionSetBaseline = QAction(self.tr("Set baseline"), service_menu)
         self.__actionSetBaseline.triggered.connect(self.__setBaselineClicked)
 
         service_menu.addAction(self.__actionCreateDbForService)
+        service_menu.addAction(self.__actionDuplicateDb)
         service_menu.addAction(self.__actionDropDb)
         service_menu.addSeparator()
         service_menu.addAction(self.__actionSetBaseline)
@@ -87,6 +87,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.db_service_toolButton.setMenu(service_menu)
 
         self.__actionCreateDbForService.setDisabled(True)
+        self.__actionDuplicateDb.setDisabled(True)
         self.__actionDropDb.setDisabled(True)
         self.__actionSetBaseline.setDisabled(True)
 
@@ -148,8 +149,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             QtUtils.setForegroundColor(self.db_database_label, PluginUtils.COLOR_WARNING)
             QtUtils.setFontItalic(self.db_database_label, True)
 
-            self.__actionDuplicateDb.setDisabled(True)
             self.__actionCreateDbForService.setDisabled(True)
+            self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
 
@@ -166,8 +167,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             QtUtils.setForegroundColor(self.db_database_label, PluginUtils.COLOR_WARNING)
             QtUtils.setFontItalic(self.db_database_label, True)
 
-            self.__actionDuplicateDb.setDisabled(True)
             self.__actionCreateDbForService.setEnabled(True)
+            self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
             return
@@ -175,8 +176,6 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.db_database_label.setText(service_database)
         QtUtils.resetForegroundColor(self.db_database_label)
         QtUtils.setFontItalic(self.db_database_label, False)
-
-        self.__actionDuplicateDb.setEnabled(True)
 
         # Try connection
         try:
@@ -187,6 +186,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__set_connection(None)
 
             self.__actionCreateDbForService.setEnabled(True)
+            self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
             self.db_moduleInfo_label.setText("Can't connect to service.")
@@ -196,6 +196,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             return
 
         self.__actionCreateDbForService.setDisabled(True)
+        self.__actionDuplicateDb.setEnabled(True)
         self.__actionDropDb.setEnabled(True)
         self.__actionSetBaseline.setEnabled(True)
 
