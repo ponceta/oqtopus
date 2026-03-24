@@ -21,7 +21,9 @@ from ..utils.plugin_utils import PluginUtils, logger
 from ..utils.qt_utils import QtUtils
 from .database_baseline_dialog import DatabaseBaselineDialog
 from .database_create_dialog import DatabaseCreateDialog
+from .database_dump_dialog import DatabaseDumpDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
+from .database_restore_dialog import DatabaseRestoreDialog
 
 libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
 if libs_path not in sys.path:
@@ -75,12 +77,20 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.__actionDuplicateDb.triggered.connect(self.__duplicateDatabaseClicked)
         self.__actionDropDb.triggered.connect(self.__dropDatabaseClicked)
 
+        self.__actionDumpDb = QAction(self.tr("Dump database"), service_menu)
+        self.__actionRestoreDb = QAction(self.tr("Restore database"), service_menu)
         self.__actionSetBaseline = QAction(self.tr("Set baseline"), service_menu)
+
+        self.__actionDumpDb.triggered.connect(self.__dumpDatabaseClicked)
+        self.__actionRestoreDb.triggered.connect(self.__restoreDatabaseClicked)
         self.__actionSetBaseline.triggered.connect(self.__setBaselineClicked)
 
         service_menu.addAction(self.__actionCreateDbForService)
         service_menu.addAction(self.__actionDuplicateDb)
         service_menu.addAction(self.__actionDropDb)
+        service_menu.addSeparator()
+        service_menu.addAction(self.__actionDumpDb)
+        service_menu.addAction(self.__actionRestoreDb)
         service_menu.addSeparator()
         service_menu.addAction(self.__actionSetBaseline)
 
@@ -89,6 +99,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.__actionCreateDbForService.setDisabled(True)
         self.__actionDuplicateDb.setDisabled(True)
         self.__actionDropDb.setDisabled(True)
+        self.__actionDumpDb.setDisabled(True)
+        self.__actionRestoreDb.setDisabled(True)
         self.__actionSetBaseline.setDisabled(True)
 
         self.__database_connection = None
@@ -152,6 +164,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__actionCreateDbForService.setDisabled(True)
             self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
+            self.__actionDumpDb.setDisabled(True)
+            self.__actionRestoreDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
 
             self.__set_connection(None)
@@ -170,6 +184,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__actionCreateDbForService.setEnabled(True)
             self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
+            self.__actionDumpDb.setDisabled(True)
+            self.__actionRestoreDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
             return
 
@@ -188,6 +204,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__actionCreateDbForService.setEnabled(True)
             self.__actionDuplicateDb.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
+            self.__actionDumpDb.setDisabled(True)
+            self.__actionRestoreDb.setDisabled(True)
             self.__actionSetBaseline.setDisabled(True)
             self.db_moduleInfo_label.setText("Can't connect to service.")
             QtUtils.setForegroundColor(self.db_moduleInfo_label, PluginUtils.COLOR_WARNING)
@@ -198,6 +216,8 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.__actionCreateDbForService.setDisabled(True)
         self.__actionDuplicateDb.setEnabled(True)
         self.__actionDropDb.setEnabled(True)
+        self.__actionDumpDb.setEnabled(True)
+        self.__actionRestoreDb.setEnabled(True)
         self.__actionSetBaseline.setEnabled(True)
 
         self.db_moduleInfo_label.setText("Connected.")
@@ -377,7 +397,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             )
             return
 
-        reply = QMessageBox.question(
+        reply = QMessageBox.warning(
             self,
             self.tr("Drop database"),
             self.tr(
@@ -418,6 +438,37 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
 
         self.__serviceChanged()
         MessageBar.pushSuccessToBar(self, self.tr("Baseline set successfully."))
+
+    def __dumpDatabaseClicked(self):
+        service_name = self.db_services_comboBox.currentText()
+        if not service_name or self.db_services_comboBox.currentData() is None:
+            return
+
+        dialog = DatabaseDumpDialog(
+            service_name=service_name,
+            parent=self,
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Rejected:
+            return
+
+        MessageBar.pushSuccessToBar(self, self.tr("Database dumped successfully."))
+
+    def __restoreDatabaseClicked(self):
+        service_name = self.db_services_comboBox.currentText()
+        if not service_name or self.db_services_comboBox.currentData() is None:
+            return
+
+        dialog = DatabaseRestoreDialog(
+            service_name=service_name,
+            parent=self,
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Rejected:
+            return
+
+        self.__serviceChanged()
+        MessageBar.pushSuccessToBar(self, self.tr("Database restored successfully."))
 
     def __set_connection(self, connection):
         """
