@@ -151,7 +151,7 @@ class ModuleWidget(QWidget, DIALOG_UI):
         """Return True if an operation is currently running."""
         return self.__operation_task.isRunning()
 
-    def setDatabaseConnection(self, connection: psycopg.Connection):
+    def setDatabaseConnection(self, connection: psycopg.Connection, update_info: bool = True):
         # Cancel any running operations before changing database
         if self.__operation_task.isRunning():
             logger.warning("Canceling running operation due to database connection change")
@@ -162,6 +162,11 @@ class ModuleWidget(QWidget, DIALOG_UI):
         self.__resetOperationUI()
 
         self.__database_connection = connection
+        if update_info:
+            self.__updateModuleInfo()
+
+    def updateModuleInfo(self):
+        """Public wrapper to refresh the module info display."""
         self.__updateModuleInfo()
 
     def __resetOperationUI(self):

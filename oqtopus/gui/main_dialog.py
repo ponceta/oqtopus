@@ -297,11 +297,19 @@ class MainDialog(QDialog, DIALOG_UI):
         self.__set_module_packages(module_package)
 
     def __databaseConnectionWidget_connectionChanged(self):
-        self.__moduleWidget.setDatabaseConnection(self.__databaseConnectionWidget.getConnection())
+        connection = self.__databaseConnectionWidget.getConnection()
+
+        # Store the connection on the module widget without updating the display yet,
+        # because auto-select below may change the selected module.
+        self.__moduleWidget.setDatabaseConnection(connection, update_info=False)
 
         self.__projectWidget.setService(self.__databaseConnectionWidget.getService())
 
-        # Auto-select the first installed module matching an entry in the module combobox
+        # Reset installed version state before auto-selecting
+        self.__moduleSelectionWidget.setInstalledVersion(None)
+
+        # Auto-select the first installed module matching an entry in the module combobox.
+        # selectModuleById may trigger __moduleChanged which handles the full loading flow.
         for module_id in self.__databaseConnectionWidget.getInstalledModuleIds():
             if self.__moduleSelectionWidget.selectModuleById(module_id):
                 installed_version = self.__databaseConnectionWidget.getInstalledModuleVersion(
@@ -309,3 +317,9 @@ class MainDialog(QDialog, DIALOG_UI):
                 )
                 self.__moduleSelectionWidget.setInstalledVersion(installed_version)
                 break
+
+        # Always refresh the module widget to reflect the new connection state.
+        # If selectModuleById changed the module, the loading flow will call
+        # setModulePackage (which also calls __updateModuleInfo) when it finishes.
+        # But if the module didn't change, we need to update explicitly.
+        self.__moduleWidget.updateModuleInfo()
