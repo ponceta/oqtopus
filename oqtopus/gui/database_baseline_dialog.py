@@ -38,6 +38,14 @@ DIALOG_UI = PluginUtils.get_ui_class("database_baseline_dialog.ui")
 
 
 class DatabaseBaselineDialog(QDialog, DIALOG_UI):
+
+    # In-memory session defaults (not persisted across sessions)
+    _session_defaults = {
+        "module": "",
+        "version": "",
+        "schema": "public",
+    }
+
     def __init__(self, connection, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
@@ -49,6 +57,11 @@ class DatabaseBaselineDialog(QDialog, DIALOG_UI):
         placeholder_layout = QVBoxLayout(self.messageBar_placeholder)
         placeholder_layout.setContentsMargins(0, 0, 0, 0)
         placeholder_layout.addWidget(self.__message_bar)
+
+        # Restore session defaults
+        self.module_lineEdit.setText(self._session_defaults["module"])
+        self.version_lineEdit.setText(self._session_defaults["version"])
+        self.schema_lineEdit.setText(self._session_defaults["schema"])
 
         self.buttonBox.accepted.connect(self._accept)
 
@@ -99,5 +112,10 @@ class DatabaseBaselineDialog(QDialog, DIALOG_UI):
             logger.error(errorText)
             self.__message_bar.pushError(errorText)
             return
+
+        # Save values for next time during this session
+        DatabaseBaselineDialog._session_defaults["module"] = module_name
+        DatabaseBaselineDialog._session_defaults["version"] = version
+        DatabaseBaselineDialog._session_defaults["schema"] = schema
 
         super().accept()
