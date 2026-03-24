@@ -413,6 +413,7 @@ class ModuleWidget(QWidget, DIALOG_UI):
             options = {
                 "beta_testing": beta_testing,
                 "force": installed_beta_testing,
+                "skip_baseline_check": dialog.skip_baseline_check(),
                 **dialog.roles_options(),
             }
 
