@@ -19,6 +19,7 @@ from ..libs.pgserviceparser import service_names as pgserviceparser_service_name
 from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..utils.plugin_utils import PluginUtils, logger
 from ..utils.qt_utils import QtUtils
+from .database_baseline_dialog import DatabaseBaselineDialog
 from .database_create_dialog import DatabaseCreateDialog
 from .database_duplicate_dialog import DatabaseDuplicateDialog
 
@@ -75,13 +76,19 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
         self.__actionCreateDbForService.triggered.connect(self.__createDatabaseForServiceClicked)
         self.__actionDropDb.triggered.connect(self.__dropDatabaseClicked)
 
+        self.__actionSetBaseline = QAction(self.tr("Set baseline"), service_menu)
+        self.__actionSetBaseline.triggered.connect(self.__setBaselineClicked)
+
         service_menu.addAction(self.__actionCreateDbForService)
         service_menu.addAction(self.__actionDropDb)
+        service_menu.addSeparator()
+        service_menu.addAction(self.__actionSetBaseline)
 
         self.db_service_toolButton.setMenu(service_menu)
 
         self.__actionCreateDbForService.setDisabled(True)
         self.__actionDropDb.setDisabled(True)
+        self.__actionSetBaseline.setDisabled(True)
 
         self.__database_connection = None
         self.__installed_module_ids = []
@@ -144,6 +151,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__actionDuplicateDb.setDisabled(True)
             self.__actionCreateDbForService.setDisabled(True)
             self.__actionDropDb.setDisabled(True)
+            self.__actionSetBaseline.setDisabled(True)
 
             self.__set_connection(None)
             return
@@ -161,6 +169,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             self.__actionDuplicateDb.setDisabled(True)
             self.__actionCreateDbForService.setEnabled(True)
             self.__actionDropDb.setDisabled(True)
+            self.__actionSetBaseline.setDisabled(True)
             return
 
         self.db_database_label.setText(service_database)
@@ -179,7 +188,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
 
             self.__actionCreateDbForService.setEnabled(True)
             self.__actionDropDb.setDisabled(True)
-
+            self.__actionSetBaseline.setDisabled(True)
             self.db_moduleInfo_label.setText("Can't connect to service.")
             QtUtils.setForegroundColor(self.db_moduleInfo_label, PluginUtils.COLOR_WARNING)
             errorText = self.tr(f"Can't connect to service '{service_name}':\n{exception}.")
@@ -188,6 +197,7 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
 
         self.__actionCreateDbForService.setDisabled(True)
         self.__actionDropDb.setEnabled(True)
+        self.__actionSetBaseline.setEnabled(True)
 
         self.db_moduleInfo_label.setText("Connected.")
         logger.info(f"Connected to service '{service_name}'.")
@@ -392,6 +402,21 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
             MessageBar.pushErrorToBar(self, self.tr(f"Failed to drop database: {e}"))
 
         self.__serviceChanged()
+
+    def __setBaselineClicked(self):
+        if self.__database_connection is None:
+            return
+
+        dialog = DatabaseBaselineDialog(
+            connection=self.__database_connection,
+            parent=self,
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Rejected:
+            return
+
+        self.__serviceChanged()
+        MessageBar.pushSuccessToBar(self, self.tr("Baseline set successfully."))
 
     def __set_connection(self, connection):
         """
