@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        qgis_version: [latest, 3.34-noble]
+        qgis_version: [latest, 3.34-noble, 3.40-noble]
     env:
       QGIS_TEST_VERSION: ${{ matrix.qgis_version }}
 
@@ -68,4 +68,4 @@ jobs:
           -e PYTHONPATH=/usr/share/qgis/python/plugins:/usr/share/qgis/python
           -v $(pwd):/usr/src
           -w /usr/src qgis/qgis:${QGIS_TEST_VERSION}
-          sh -c 'pip3 install -r requirements.txt || pip3 install -r requirements.txt --break-system-packages;xvfb-run pytest --ignore=tests/test_module_widget.py'
+          sh -c 'python3 -m venv --system-site-packages /tmp/venv && /tmp/venv/bin/pip install -r requirements.txt pytest && xvfb-run /tmp/venv/bin/python -m pytest --ignore=tests/test_module_widget.py'

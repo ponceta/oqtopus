@@ -22,7 +22,6 @@
 #
 # ---------------------------------------------------------------------
 
-import psycopg
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
@@ -62,14 +61,6 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
             return
 
         service_name = self.existingService_label.text()
-        try:
-            database_connection = psycopg.connect(service=service_name)
-
-        except Exception as exception:
-            errorText = self.tr(f"Can't connect to service '{service_name}':\n{exception}.")
-            logger.error(errorText)
-            QMessageBox.critical(self, "Error", errorText)
-            return
 
         # Create new service configuration
         new_service_name = self.newService_lineEdit.text()
@@ -92,7 +83,7 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
         try:
             with OverrideCursor(Qt.CursorShape.WaitCursor):
                 create_database(
-                    {"service": service_name},
+                    {"service": service_name, "dbname": "postgres"},
                     new_database_name,
                     template=self.__existing_service_config.get("dbname"),
                 )
@@ -101,8 +92,6 @@ class DatabaseDuplicateDialog(QDialog, DIALOG_UI):
             logger.error(errorText)
             QMessageBox.critical(self, "Error", errorText)
             return
-        finally:
-            database_connection.close()
 
         # Write the new service configuration
         try:

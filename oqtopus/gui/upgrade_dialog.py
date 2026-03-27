@@ -16,7 +16,13 @@ from .parameters_groupbox import ParametersGroupBox
 from .roles_groupbox import RolesGroupBox
 
 if HAS_QGS_SETTINGS:
-    from qgis.gui import QgsSettingsBoolCheckBoxWrapper
+    try:
+        from qgis.gui import QgsSettingsBoolCheckBoxWrapper
+    except ImportError:
+        # for QGIS < 3.40
+        from qgis.gui import (
+            QgsSettingsBoolEditorWidgetWrapper as QgsSettingsBoolCheckBoxWrapper,
+        )
 
 logger = logging.getLogger(__name__)
 
