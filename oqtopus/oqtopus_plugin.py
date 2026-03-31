@@ -54,6 +54,9 @@ class OqtopusPlugin:
         self._icon = icon or PluginUtils.get_plugin_icon_path("oqtopus-logo.png")
         self._title = title
 
+        if settings_plugin_name:
+            PluginUtils.PLUGIN_ID = settings_plugin_name
+
         self.__version__ = PluginUtils.get_plugin_version()
 
         PluginUtils.init_logger()
