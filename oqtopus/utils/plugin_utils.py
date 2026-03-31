@@ -65,13 +65,13 @@ class PluginUtils:
 
         Uses CacheLocation which is appropriate for data that should persist
         across sessions but can be safely deleted.
-        On macOS: ~/Library/Caches/oqtopus
-        On Linux: ~/.cache/oqtopus
-        On Windows: C:/Users/<USER>/AppData/Local/oqtopus/cache
+        On macOS: ~/Library/Caches/<PLUGIN_ID>
+        On Linux: ~/.cache/<PLUGIN_ID>
+        On Windows: C:/Users/<USER>/AppData/Local/<PLUGIN_ID>/cache
         """
         cache_dir = os.path.join(
             QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation),
-            "oqtopus",
+            PluginUtils.PLUGIN_ID,
         )
         os.makedirs(cache_dir, exist_ok=True)
         return cache_dir
@@ -105,7 +105,7 @@ class PluginUtils:
         # Main cache directory (CacheLocation)
         cache_path = os.path.join(
             QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation),
-            "oqtopus",
+            PluginUtils.PLUGIN_ID,
         )
         if os.path.exists(cache_path):
             paths.append(cache_path)

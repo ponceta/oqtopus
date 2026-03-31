@@ -199,6 +199,7 @@ class MainDialog(QDialog, DIALOG_UI):
 
     def __open_settings_dialog(self):
         dlg = SettingsDialog(self)
+        dlg.setWindowTitle(f"{self.windowTitle()} - {self.tr('Settings')}")
         if dlg.exec() == QDialog.DialogCode.Accepted:
             # Update column visibility from settings
             self.__logsWidget.update_column_visibility_from_settings()
