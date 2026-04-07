@@ -483,10 +483,14 @@ class ModuleSelectionWidget(QWidget, DIALOG_UI):
         self.module_package_comboBox.insertSeparator(self.module_package_comboBox.count())
 
         # If development versions were already loaded, add them directly
-        # Otherwise show the option to load them
+        # Otherwise show the option to load them (or auto-load if setting enabled)
         if self.__current_module.development_versions:
             for module_package in self.__current_module.development_versions:
                 self.module_package_comboBox.addItem(module_package.display_name(), module_package)
+        elif Settings().auto_load_development_versions.value():
+            self.__enable_package_selection()
+            self.__loadDevelopmentVersions()
+            return
         else:
             self.module_package_comboBox.addItem(
                 self.tr("Load pre-releases and development branches"),

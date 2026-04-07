@@ -7,6 +7,7 @@ import requests
 from qgis.PyQt.QtCore import QThread, pyqtSignal
 
 from ..core.module_package import ModulePackage
+from ..core.settings import Settings
 from ..utils.plugin_utils import PluginUtils, logger
 
 
@@ -118,6 +119,7 @@ class PackagePrepareTask(QThread):
                 ModulePackage.Type.PULL_REQUEST,
             ):
                 self.module_package.fetch_commit_sha()
+                self.module_package.fetch_workflow_assets()
 
             # Reset progress tracking
             self.__download_total_expected = 0
@@ -153,6 +155,11 @@ class PackagePrepareTask(QThread):
 
     def __prepare_module_assets(self, module_package):
 
+        is_workflow_artifact = module_package.type in (
+            ModulePackage.Type.BRANCH,
+            ModulePackage.Type.PULL_REQUEST,
+        )
+
         # Pre-fetch all file sizes to calculate accurate total progress
         self.__prefetch_download_sizes(module_package)
 
@@ -170,32 +177,64 @@ class PackagePrepareTask(QThread):
         package_dir = self.__extract_zip_file(zip_file, "src")
         module_package.source_package_dir = package_dir
 
-        # Download the release assets
+        # Download the assets (release assets or workflow artifacts)
         self.__checkForCanceled()
         if module_package.asset_project is not None:
-            zip_file, was_downloaded = self.__download_module_asset(
-                module_package.asset_project.download_url,
-                module_package.asset_project.type.value + ".zip",
-                module_package,
-            )
-            if was_downloaded:
-                self.__remove_extracted_dir("project")
-            package_dir = self.__extract_zip_file(zip_file, "project")
-            module_package.asset_project.package_zip = zip_file
-            module_package.asset_project.package_dir = package_dir
+            try:
+                zip_file, was_downloaded = self.__download_module_asset(
+                    module_package.asset_project.download_url,
+                    module_package.asset_project.type.value + ".zip",
+                    module_package,
+                )
+                if was_downloaded:
+                    if is_workflow_artifact:
+                        zip_file = self.__unwrap_workflow_artifact(zip_file)
+                    self.__remove_extracted_dir("project")
+                package_dir = self.__extract_zip_file(zip_file, "project")
+                module_package.asset_project.package_zip = zip_file
+                module_package.asset_project.package_dir = package_dir
+            except requests.exceptions.HTTPError as e:
+                if (
+                    is_workflow_artifact
+                    and e.response is not None
+                    and e.response.status_code == 403
+                ):
+                    logger.warning(
+                        f"Cannot download workflow artifact for project: {e}. "
+                        "Your GitHub token may be missing the 'actions' scope."
+                    )
+                    module_package.asset_project = None
+                else:
+                    raise
 
         self.__checkForCanceled()
         if module_package.asset_plugin is not None:
-            zip_file, was_downloaded = self.__download_module_asset(
-                module_package.asset_plugin.download_url,
-                module_package.asset_plugin.type.value + ".zip",
-                module_package,
-            )
-            if was_downloaded:
-                self.__remove_extracted_dir("plugin")
-            package_dir = self.__extract_zip_file(zip_file, "plugin")
-            module_package.asset_plugin.package_zip = zip_file
-            module_package.asset_plugin.package_dir = package_dir
+            try:
+                zip_file, was_downloaded = self.__download_module_asset(
+                    module_package.asset_plugin.download_url,
+                    module_package.asset_plugin.type.value + ".zip",
+                    module_package,
+                )
+                if was_downloaded:
+                    if is_workflow_artifact:
+                        zip_file = self.__unwrap_workflow_artifact(zip_file)
+                    self.__remove_extracted_dir("plugin")
+                package_dir = self.__extract_zip_file(zip_file, "plugin")
+                module_package.asset_plugin.package_zip = zip_file
+                module_package.asset_plugin.package_dir = package_dir
+            except requests.exceptions.HTTPError as e:
+                if (
+                    is_workflow_artifact
+                    and e.response is not None
+                    and e.response.status_code == 403
+                ):
+                    logger.warning(
+                        f"Cannot download workflow artifact for plugin: {e}. "
+                        "Your GitHub token may be missing the 'actions' scope."
+                    )
+                    module_package.asset_plugin = None
+                else:
+                    raise
 
     def __prefetch_download_sizes(self, module_package):
         """Pre-fetch Content-Length for all files to be downloaded for accurate progress."""
@@ -246,7 +285,10 @@ class PackagePrepareTask(QThread):
         for url, filename in urls_to_check:
             # Get Content-Length via HEAD request
             try:
-                response = requests.head(url, allow_redirects=True, timeout=10)
+                headers = {}
+                if "api.github.com" in url:
+                    headers = Settings.get_github_headers()
+                response = requests.head(url, headers=headers, allow_redirects=True, timeout=10)
                 content_length = response.headers.get("content-length")
                 if content_length:
                     file_size = int(content_length)
@@ -314,6 +356,36 @@ class PackagePrepareTask(QThread):
                 except OSError as e:
                     logger.warning(f"Failed to remove old cached file {f}: {e}")
 
+    def __unwrap_workflow_artifact(self, zip_file):
+        """Unwrap a GitHub Actions artifact zip.
+
+        The Actions API always returns a zip wrapper around the artifact content.
+        If the artifact itself contains a single .zip file, we extract it and
+        replace the wrapper so downstream code sees a normal zip.
+        If the artifact contains loose files (directory upload), the wrapper
+        zip is already usable as-is — no unwrapping needed.
+        """
+        try:
+            with zipfile.ZipFile(zip_file, "r") as outer:
+                entries = outer.namelist()
+                inner_zips = [e for e in entries if e.endswith(".zip")]
+
+                if len(inner_zips) == 1 and len(entries) == 1:
+                    # Single zip inside the wrapper — extract and replace
+                    inner_name = inner_zips[0]
+                    temp_file = zip_file + ".inner"
+                    with outer.open(inner_name) as src, open(temp_file, "wb") as dst:
+                        shutil.copyfileobj(src, dst)
+                    os.replace(temp_file, zip_file)
+                    logger.info(f"Unwrapped inner zip '{inner_name}' from workflow artifact")
+                else:
+                    # Loose files — the wrapper zip is the actual content
+                    logger.info("Workflow artifact contains loose files, no unwrapping needed")
+        except (zipfile.BadZipFile, OSError) as e:
+            logger.warning(f"Failed to unwrap workflow artifact '{zip_file}': {e}")
+
+        return zip_file
+
     def __download_module_asset(self, url: str, filename: str, module_package):
 
         cache_filename = self.__get_cache_filename(filename, module_package)
@@ -347,7 +419,19 @@ class PackagePrepareTask(QThread):
         logger.info(f"Downloading: {os.path.basename(zip_file)}")
 
         try:
-            response = requests.get(url, allow_redirects=True, stream=True, timeout=timeout)
+            # Only pass auth headers for GitHub API URLs (api.github.com).
+            # Regular archive URLs (github.com) redirect to codeload.github.com
+            # which rejects API-style token auth.
+            headers = {}
+            if "api.github.com" in url:
+                headers = Settings.get_github_headers()
+            response = requests.get(
+                url,
+                headers=headers,
+                allow_redirects=True,
+                stream=True,
+                timeout=timeout,
+            )
         except Exception as e:
             logger.error(f"HTTP request failed: {e}")
             raise
@@ -405,8 +489,7 @@ class PackagePrepareTask(QThread):
 
         try:
             with zipfile.ZipFile(zip_file, "r") as zip_ref:
-                # Find the top-level directory in the zip
-                zip_dirname = zip_ref.namelist()[0].split("/")[0]
+                names = zip_ref.namelist()
 
                 # Use short name to avoid Windows MAX_PATH issues
                 package_dir = os.path.join(self.__destination_directory, subdir)
@@ -423,13 +506,23 @@ class PackagePrepareTask(QThread):
                         logger.warning(f"Directory '{package_dir}' is empty, will re-extract")
                         shutil.rmtree(package_dir)
 
-                logger.info(f"Extracting '{zip_file}'...")
-                zip_ref.extractall(self.__destination_directory)
+                # Detect if the zip has a single common top-level directory
+                top_levels = {n.split("/")[0] for n in names if n}
+                has_common_root = len(top_levels) == 1 and all("/" in n for n in names if n)
 
-                # Rename extracted dir to "src" to shorten paths
-                extracted_dir = os.path.join(self.__destination_directory, zip_dirname)
-                if extracted_dir != package_dir:
-                    shutil.move(extracted_dir, package_dir)
+                logger.info(f"Extracting '{zip_file}'...")
+
+                if has_common_root:
+                    # Standard zip with a single root directory — extract then rename
+                    zip_dirname = top_levels.pop()
+                    zip_ref.extractall(self.__destination_directory)
+                    extracted_dir = os.path.join(self.__destination_directory, zip_dirname)
+                    if extracted_dir != package_dir:
+                        shutil.move(extracted_dir, package_dir)
+                else:
+                    # Flat zip (no common root) — extract directly into subdir
+                    os.makedirs(package_dir, exist_ok=True)
+                    zip_ref.extractall(package_dir)
 
                 logger.info(f"Extraction complete: '{package_dir}'")
 

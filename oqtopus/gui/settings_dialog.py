@@ -31,6 +31,9 @@ class SettingsDialog(QDialog, DIALOG_UI):
         self.log_show_datetime_checkBox.setChecked(Settings().log_show_datetime.value())
         self.log_show_level_checkBox.setChecked(Settings().log_show_level.value())
         self.log_show_module_checkBox.setChecked(Settings().log_show_module.value())
+        self.auto_load_development_versions_checkBox.setChecked(
+            Settings().auto_load_development_versions.value()
+        )
 
         self.helpButton.setIcon(
             QApplication.style().standardIcon(QStyle.StandardPixmap.SP_DialogHelpButton)
@@ -48,6 +51,9 @@ class SettingsDialog(QDialog, DIALOG_UI):
         Settings().log_show_datetime.setValue(self.log_show_datetime_checkBox.isChecked())
         Settings().log_show_level.setValue(self.log_show_level_checkBox.isChecked())
         Settings().log_show_module.setValue(self.log_show_module_checkBox.isChecked())
+        Settings().auto_load_development_versions.setValue(
+            self.auto_load_development_versions_checkBox.isChecked()
+        )
         super().accept()
 
     def __toggle_token_visibility(self):

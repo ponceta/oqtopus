@@ -139,6 +139,12 @@ class Settings:
                 False,
                 "Skip changelog checks when upgrading a baselined database",
             )
+            cls.auto_load_development_versions = QgsSettingsEntryBool(
+                "auto-load-development-versions",
+                settings_node,
+                False,
+                "Automatically load pre-releases and development branches when selecting a module",
+            )
 
             # Dynamic per-module/version setting (QGIS only)
             cls.installed_project_path = QgsSettingsEntryString(
@@ -157,6 +163,9 @@ class Settings:
             cls.log_show_module = _QSettingsEntryBool("log-show-module", True)
             cls.show_logs = _QSettingsEntryBool("show-logs", False)
             cls.skip_baseline_check = _QSettingsEntryBool("skip-baseline-check", False)
+            cls.auto_load_development_versions = _QSettingsEntryBool(
+                "auto-load-development-versions", False
+            )
 
             # Not available in standalone mode
             cls.installed_project_path = None
@@ -169,5 +178,5 @@ class Settings:
         token = Settings().github_token.value()
         headers = {}
         if token:
-            headers["Authorization"] = f"token {token}"
+            headers["Authorization"] = f"Bearer {token}"
         return headers
