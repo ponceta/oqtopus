@@ -7,6 +7,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QFileDialog, QWidget
 
 from ..core.module_package import ModulePackage
+from ..core.settings import Settings
 from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..utils.plugin_utils import PluginUtils, logger
 from ..utils.qt_utils import QtUtils
@@ -54,7 +55,30 @@ class PluginWidget(QWidget, DIALOG_UI):
 
         asset_plugin = self.__current_module_package.asset_plugin
         if asset_plugin is None:
-            self.info_label.setText(self.tr("No plugin asset available for this module version."))
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
+            )
+            if is_dev and not Settings.get_github_headers().get("Authorization"):
+                self.info_label.setText(
+                    self.tr(
+                        "A GitHub personal access token is required to download "
+                        "plugin assets for development branches and pull requests. "
+                        "Please configure a token in Settings."
+                    )
+                )
+            elif is_dev:
+                self.info_label.setText(
+                    self.tr(
+                        "No plugin asset available. "
+                        "Ensure your GitHub token has the 'actions' scope "
+                        "and a successful workflow run exists for this branch."
+                    )
+                )
+            else:
+                self.info_label.setText(
+                    self.tr("No plugin asset available for this module version.")
+                )
             QtUtils.setForegroundColor(self.info_label, PluginUtils.COLOR_WARNING)
             QtUtils.setFontItalic(self.info_label, True)
             return

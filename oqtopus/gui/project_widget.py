@@ -14,6 +14,7 @@ except ImportError:
     HAS_QGIS = False
 
 from ..core.module_package import ModulePackage
+from ..core.settings import Settings
 from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..utils.plugin_utils import PluginUtils, logger
 from ..utils.qt_utils import QtUtils
@@ -40,12 +41,14 @@ class ProjectWidget(QWidget, DIALOG_UI):
     def setModulePackage(self, module_package: ModulePackage):
         self.__current_module_package = module_package
         self.__updateProjectFilename()
+        self.__updateInstallButton()
         self.__updateOpenInQgisButton()
 
     def clearModulePackage(self):
         """Clear module package state and reset UI."""
         self.__current_module_package = None
         self.__updateProjectFilename()
+        self.__updateInstallButton()
         self.__updateOpenInQgisButton()
 
     def setService(self, service):
@@ -62,9 +65,30 @@ class ProjectWidget(QWidget, DIALOG_UI):
 
         asset_project = self.__current_module_package.asset_project
         if asset_project is None:
-            self.project_info_label.setText(
-                self.tr("No project asset available for this module version.")
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
             )
+            if is_dev and not Settings.get_github_headers().get("Authorization"):
+                self.project_info_label.setText(
+                    self.tr(
+                        "A GitHub personal access token is required to download "
+                        "project assets for development branches and pull requests. "
+                        "Please configure a token in Settings."
+                    )
+                )
+            elif is_dev:
+                self.project_info_label.setText(
+                    self.tr(
+                        "No project asset available. "
+                        "Ensure your GitHub token has the 'actions' scope "
+                        "and a successful workflow run exists for this branch."
+                    )
+                )
+            else:
+                self.project_info_label.setText(
+                    self.tr("No project asset available for this module version.")
+                )
             QtUtils.setForegroundColor(self.project_info_label, PluginUtils.COLOR_WARNING)
             QtUtils.setFontItalic(self.project_info_label, True)
             return
@@ -100,7 +124,16 @@ class ProjectWidget(QWidget, DIALOG_UI):
 
         QtUtils.resetForegroundColor(self.project_info_label)
         QtUtils.setFontItalic(self.project_info_label, False)
-        if self.__current_service:
+
+        is_dev = self.__current_module_package.type in (
+            ModulePackage.Type.BRANCH,
+            ModulePackage.Type.PULL_REQUEST,
+        )
+
+        if is_dev:
+            # For dev branches, show the cached project path directly
+            QtUtils.setPathLinkWithEllipsis(self.project_info_label, project_file)
+        elif self.__current_service:
             self.project_info_label.setText(
                 f"Project will use PG Service '{self.__current_service}' for database connection"
             )
@@ -108,6 +141,29 @@ class ProjectWidget(QWidget, DIALOG_UI):
             self.project_info_label.setText(
                 "Project will use the default service. Please set a service in the database connection tab if you need a specific one."
             )
+
+    def __updateInstallButton(self):
+        """Disable the install button for dev branches (project is used from cache)."""
+        if self.__current_module_package is None:
+            self.project_install_pushButton.setEnabled(True)
+            self.project_install_pushButton.setToolTip("")
+            return
+
+        is_dev = self.__current_module_package.type in (
+            ModulePackage.Type.BRANCH,
+            ModulePackage.Type.PULL_REQUEST,
+        )
+        if is_dev and self.__current_module_package.asset_project is not None:
+            self.project_install_pushButton.setEnabled(False)
+            self.project_install_pushButton.setToolTip(
+                self.tr(
+                    "Installation is not available for development versions. "
+                    "The project is available directly from the download cache."
+                )
+            )
+        else:
+            self.project_install_pushButton.setEnabled(True)
+            self.project_install_pushButton.setToolTip("")
 
     def __projectInstallClicked(self):
 
@@ -235,10 +291,10 @@ class ProjectWidget(QWidget, DIALOG_UI):
         return None
 
     def __updateOpenInQgisButton(self):
-        """Enable the 'Open in QGIS' button only when a saved project exists."""
+        """Enable the 'Open in QGIS' button only when a project file is available."""
         if not HAS_QGIS:
             return
-        project_path = self.__getInstalledProjectPath()
+        project_path = self.__getAvailableProjectPath()
         self.project_openInQgis_pushButton.setEnabled(project_path is not None)
         if project_path:
             self.project_openInQgis_pushButton.setToolTip(project_path)
@@ -247,9 +303,25 @@ class ProjectWidget(QWidget, DIALOG_UI):
                 self.tr("Install the project first to enable this button.")
             )
 
+    def __getAvailableProjectPath(self):
+        """Return the project file path, checking dev cache first, then installed path."""
+        if self.__current_module_package is not None:
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
+            )
+            if is_dev and self.__current_module_package.asset_project is not None:
+                package_dir = self.__current_module_package.asset_project.package_dir
+                if package_dir and os.path.isdir(package_dir):
+                    for root, dirs, files in os.walk(package_dir):
+                        for file in files:
+                            if file.endswith((".qgz", ".qgs")):
+                                return os.path.join(root, file)
+        return self.__getInstalledProjectPath()
+
     def __openProjectInQgis(self):
-        """Open the remembered project file in QGIS."""
-        project_path = self.__getInstalledProjectPath()
+        """Open the project file in QGIS."""
+        project_path = self.__getAvailableProjectPath()
         if project_path is None:
             MessageBar.pushWarningToBar(
                 self,

@@ -88,6 +88,90 @@ class ModulePackage:
             logger.warning(f"Failed to fetch commit SHA for branch '{self.branch}': {e}")
             self.commit_sha = None
 
+    def fetch_workflow_assets(self):
+        """Fetch workflow artifact URLs for branch/PR packages from GitHub Actions API.
+
+        Requires a GitHub token. Looks for artifacts named 'oqtopus.project'
+        and 'oqtopus.plugin' from the latest successful workflow run on the branch.
+        """
+        from ..utils.plugin_utils import logger
+
+        if self.type not in (ModulePackage.Type.BRANCH, ModulePackage.Type.PULL_REQUEST):
+            return
+
+        headers = Settings.get_github_headers()
+        if not headers.get("Authorization"):
+            logger.info("No GitHub token configured — skipping workflow artifact lookup.")
+            return
+
+        try:
+            # Find the latest successful workflow run on this branch
+            url = (
+                f"https://api.github.com/repos/{self.organisation}/{self.repository}"
+                f"/actions/runs?branch={self.branch}&status=success&per_page=5"
+            )
+            r = requests.get(url, headers=headers, timeout=10)
+            r.raise_for_status()
+            runs = r.json().get("workflow_runs", [])
+
+            if not runs:
+                logger.info(f"No successful workflow runs found for branch '{self.branch}'.")
+                return
+
+            # Check each run (most recent first) for matching artifacts
+            for run in runs:
+                artifacts_url = run["artifacts_url"]
+                r = requests.get(artifacts_url, headers=headers, timeout=10)
+                r.raise_for_status()
+                artifacts = r.json().get("artifacts", [])
+
+                for artifact in artifacts:
+                    artifact_name = artifact["name"]
+                    if artifact["expired"]:
+                        continue
+
+                    download_url = (
+                        f"https://api.github.com/repos/{self.organisation}/{self.repository}"
+                        f"/actions/artifacts/{artifact['id']}/zip"
+                    )
+
+                    if (
+                        artifact_name == ModuleAsset.Type.PROJECT.value
+                        and self.asset_project is None
+                    ):
+                        self.asset_project = ModuleAsset(
+                            name=artifact_name,
+                            label=artifact_name,
+                            download_url=download_url,
+                            size=artifact["size_in_bytes"],
+                            type=ModuleAsset.Type.PROJECT,
+                        )
+                        logger.info(
+                            f"Found workflow artifact '{artifact_name}' (run #{run['run_number']})"
+                        )
+
+                    elif (
+                        artifact_name == ModuleAsset.Type.PLUGIN.value
+                        and self.asset_plugin is None
+                    ):
+                        self.asset_plugin = ModuleAsset(
+                            name=artifact_name,
+                            label=artifact_name,
+                            download_url=download_url,
+                            size=artifact["size_in_bytes"],
+                            type=ModuleAsset.Type.PLUGIN,
+                        )
+                        logger.info(
+                            f"Found workflow artifact '{artifact_name}' (run #{run['run_number']})"
+                        )
+
+                if self.asset_project or self.asset_plugin:
+                    # Found at least one artifact in this run, stop searching older runs
+                    break
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch workflow artifacts for branch '{self.branch}': {e}")
+
     def __parse_release(self, json_payload: dict):
         if self.name is None:
             self.name = json_payload["name"]
