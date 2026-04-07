@@ -246,10 +246,15 @@ class DatabaseConnectionWidget(QWidget, DIALOG_UI):
 
         tooltip_lines = []
         try:
+            conn_info = self.__database_connection.info
+            host = conn_info.host or "localhost"
+            port = conn_info.port or 5432
+            tooltip_lines.append(f"<b>Host:</b> {host}:{port}")
+
             with self.__database_connection.cursor() as cur:
                 cur.execute("SELECT version()")
                 pg_version = cur.fetchone()[0]
-                tooltip_lines.append(f"<b>PostgreSQL:</b> {pg_version}")
+                tooltip_lines.append(f"<br><b>Version:</b> {pg_version}")
 
                 cur.execute(
                     "SELECT name, default_version, installed_version "
