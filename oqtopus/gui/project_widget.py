@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 
 from qgis.PyQt.QtCore import QUrl
@@ -17,6 +16,7 @@ from ..core.module_package import ModulePackage
 from ..core.settings import Settings
 from ..libs.pgserviceparser.gui.message_bar import MessageBar
 from ..utils.plugin_utils import PluginUtils, logger
+from ..utils.project_patcher import patch_project_file
 from ..utils.qt_utils import QtUtils
 
 DIALOG_UI = PluginUtils.get_ui_class("project_widget.ui")
@@ -218,22 +218,8 @@ class ProjectWidget(QWidget, DIALOG_UI):
                 if os.path.isdir(source_path):
                     shutil.copytree(source_path, destination_path, dirs_exist_ok=True)
 
-                elif item.endswith(".qgs"):
-                    with open(source_path) as original_project:
-                        contents = original_project.read()
-
-                    if self.__current_service is not None:
-                        contents = re.sub(
-                            r"service='[^']+'", f"service='{self.__current_service}'", contents
-                        )
-                    else:
-                        logger.warning(
-                            "No service set, skipping service replacement in project file."
-                        )
-
-                    installed_path = os.path.join(install_destination, item)
-                    with open(installed_path, "w") as output_file:
-                        output_file.write(contents)
+                elif item.endswith((".qgs", ".qgz")):
+                    patch_project_file(source_path, destination_path, self.__current_service)
 
                 else:
                     shutil.copy2(source_path, destination_path)
@@ -320,7 +306,7 @@ class ProjectWidget(QWidget, DIALOG_UI):
         return self.__getInstalledProjectPath()
 
     def __openProjectInQgis(self):
-        """Open the project file in QGIS."""
+        """Open the project file in QGIS, patching the PG service for dev branches."""
         project_path = self.__getAvailableProjectPath()
         if project_path is None:
             MessageBar.pushWarningToBar(
@@ -328,6 +314,17 @@ class ProjectWidget(QWidget, DIALOG_UI):
                 self.tr("No installed project found. Please install the project first."),
             )
             return
+
+        # For dev branches the project lives in the cache and has not been
+        # through the install step, so we patch the service name in-place.
+        if self.__current_module_package is not None:
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
+            )
+            if is_dev and self.__current_service:
+                patch_project_file(project_path, project_path, self.__current_service)
+
         logger.info(f"Opening project in QGIS: {project_path}")
         QgsProject.instance().read(project_path)  # type: ignore[possibly-undefined]
 
