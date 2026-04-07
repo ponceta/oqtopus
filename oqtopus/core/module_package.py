@@ -165,8 +165,8 @@ class ModulePackage:
                             f"Found workflow artifact '{artifact_name}' (run #{run['run_number']})"
                         )
 
-                if self.asset_project or self.asset_plugin:
-                    # Found at least one artifact in this run, stop searching older runs
+                if self.asset_project and self.asset_plugin:
+                    # Found both artifacts, stop searching older runs
                     break
 
         except Exception as e:
