@@ -38,6 +38,7 @@ class PluginWidget(QWidget, DIALOG_UI):
         self.__current_module_package = module_package
         self.__plugin_name = None
         self.__packagePrepareGetPluginFilename()
+        self.__updateDevWarningLabel()
 
     def clearModulePackage(self):
         """Clear module package state and reset UI."""
@@ -45,6 +46,22 @@ class PluginWidget(QWidget, DIALOG_UI):
         self.info_label.setText(self.tr("No module package selected."))
         QtUtils.setForegroundColor(self.info_label, PluginUtils.COLOR_WARNING)
         QtUtils.setFontItalic(self.info_label, True)
+        self.__updateDevWarningLabel()
+
+    def __updateDevWarningLabel(self):
+        """Show a warning when the plugin comes from a development build."""
+        if self.__current_module_package is not None:
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
+            )
+            if is_dev and self.__current_module_package.asset_plugin is not None:
+                self.dev_warning_label.setText(
+                    self.tr("⚠️ This plugin is from a development build.")
+                )
+                self.dev_warning_label.setVisible(True)
+                return
+        self.dev_warning_label.setVisible(False)
 
     def __packagePrepareGetPluginFilename(self):
         if self.__current_module_package is None:

@@ -43,6 +43,7 @@ class ProjectWidget(QWidget, DIALOG_UI):
         self.__updateProjectFilename()
         self.__updateInstallButton()
         self.__updateOpenInQgisButton()
+        self.__updateDevWarningLabel()
 
     def clearModulePackage(self):
         """Clear module package state and reset UI."""
@@ -50,6 +51,7 @@ class ProjectWidget(QWidget, DIALOG_UI):
         self.__updateProjectFilename()
         self.__updateInstallButton()
         self.__updateOpenInQgisButton()
+        self.__updateDevWarningLabel()
 
     def setService(self, service):
         self.__current_service = service
@@ -164,6 +166,24 @@ class ProjectWidget(QWidget, DIALOG_UI):
         else:
             self.project_install_pushButton.setEnabled(True)
             self.project_install_pushButton.setToolTip("")
+
+    def __updateDevWarningLabel(self):
+        """Show a warning when the project comes from a development build."""
+        if self.__current_module_package is not None:
+            is_dev = self.__current_module_package.type in (
+                ModulePackage.Type.BRANCH,
+                ModulePackage.Type.PULL_REQUEST,
+            )
+            if is_dev and self.__current_module_package.asset_project is not None:
+                self.project_dev_warning_label.setText(
+                    self.tr(
+                        "⚠️ This project is from a development build "
+                        "and is stored in a temporary cache directory."
+                    )
+                )
+                self.project_dev_warning_label.setVisible(True)
+                return
+        self.project_dev_warning_label.setVisible(False)
 
     def __projectInstallClicked(self):
 
