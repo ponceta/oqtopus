@@ -1,10 +1,12 @@
 import sys
 from pathlib import Path
 
-# The qgis.PyQt shim is set up in oqtopus/__init__.py
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QApplication
 
+# Install the standalone ``qgis.PyQt`` shim before importing anything that
+# depends on ``qgis.PyQt`` (this is a no-op when running inside QGIS).
+from . import _qgis_shim  # noqa: F401
 from .gui.main_dialog import MainDialog
 from .utils.plugin_utils import PluginUtils
 
