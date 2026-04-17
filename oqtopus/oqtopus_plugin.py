@@ -206,6 +206,11 @@ class OqtopusPlugin:
         #    allowing QGIS to delete the plugin folder on uninstall.
         import sys
 
+        # Close the plugin's log file handler first: on Windows an open file
+        # handle on a log file inside the plugin directory prevents QGIS from
+        # removing the plugin folder during uninstallation (see issue #84).
+        PluginUtils.shutdown_logger()
+
         prefixes = ("oqtopus", "pum", "pgserviceparser")
         stale = [mod for mod in sys.modules if mod.startswith(prefixes)]
         for mod in stale:

@@ -46,6 +46,7 @@ class PluginUtils:
     PLUGIN_ID = "oqtopus"
 
     logsDirectory = ""
+    _file_handler = None
 
     COLOR_GREEN = QColor(12, 167, 137)
     COLOR_WARNING = QColor(255, 165, 0)
@@ -179,12 +180,33 @@ class PluginUtils:
             root_logger = logging.getLogger()
             root_logger.setLevel(SQL)  # Set root to SQL level to allow SQL messages through
             root_logger.addHandler(fileHandler)
+            PluginUtils._file_handler = fileHandler
 
             # Set the pum library to SQL level (5) to capture all SQL statements
             # SQL (5) < DEBUG (10) < INFO (20)
             logging.getLogger("pum").setLevel(SQL)
         else:
             logger.error(f"Can't create log files directory '{PluginUtils.logsDirectory}'.")
+
+    @staticmethod
+    def shutdown_logger():
+        """Close and remove the plugin's log file handler.
+
+        On Windows, an open file handle on a log file located inside the
+        plugin directory prevents QGIS from removing the plugin folder during
+        uninstallation (see issue #84). Call this during plugin ``unload()``
+        so that file handles are released before QGIS tries to delete files.
+        """
+        root_logger = logging.getLogger()
+        # Remove the specific handler we registered
+        handler = PluginUtils._file_handler
+        if handler is not None:
+            try:
+                root_logger.removeHandler(handler)
+                handler.close()
+            except Exception:
+                pass
+            PluginUtils._file_handler = None
 
     @staticmethod
     def _cleanup_old_logs(logs_dir: str, keep: int = 10):
